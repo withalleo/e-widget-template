@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>EmbedWidgetMessenger - Synced Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 16px;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: none;
+            color: #111;
+        }
+    </style>
+</head>
+<body>
+<EWidgetSDK/>
+<h1>EmbedWidgetMessenger - Synced Status</h1>
+<p>Click the button to set a random color in synced status.</p>
+
+<button id="color">Set random color</button>
+
+<script>
+    const button = document.getElementById('color')
+
+    const applyColor = (status) => {
+        if (!status || !status.color) return
+        button.style.backgroundColor = status.color
+    }
+
+    alleo.onSyncedStatusUpdate((status) => {
+        applyColor(status)
+    })
+
+    button.addEventListener('click', () => {
+        const color = `#${Math.floor(Math.random() * 0xffffff)
+            .toString(16)
+            .padStart(6, '0')}`
+        alleo.setSyncedStatus({color})
+    })
+
+    alleo.requestSyncedStatus()
+</script>
+</body>
+</html>

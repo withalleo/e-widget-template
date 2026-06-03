@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>EmbedWidgetMessenger - Board Object Content</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 16px;
+        }
+
+        button {
+            padding: 8px 12px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 80px;
+            font-family: monospace;
+        }
+
+        select,
+        input[type='number'] {
+            padding: 4px 8px;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 8px;
+            max-height: 200px;
+            overflow: auto;
+        }
+
+        .controls {
+            margin-bottom: 16px;
+        }
+
+        .controls label {
+            display: inline-block;
+            margin-right: 12px;
+        }
+    </style>
+</head>
+<body>
+<EWidgetSDK/>
+<h1>Board Object Content</h1>
+<p>
+    These commands require <strong>Enable board object content functions</strong>
+    and at least one whitelisted board object in settings.
+</p>
+
+<div class="controls">
+    <label>
+        Index:
+        <input id="index" min="1" style="width: 60px" type="number" value="1"/>
+    </label>
+    <label>
+        Format:
+        <select id="format">
+            <option value="text">text</option>
+            <option value="markdown">markdown</option>
+            <option value="html">html</option>
+        </select>
+    </label>
+</div>
+
+<button id="get">Get content</button>
+<button id="replace">Replace content</button>
+<button id="append">Append content</button>
+
+<h2>Text</h2>
+<textarea id="text" placeholder="Enter text to replace or append…"></textarea>
+
+<h2>Log</h2>
+<pre id="log"></pre>
+
+<script>
+    const logEl = document.getElementById('log')
+    const log = (message, data) => {
+        const line = data !== undefined ? `${message} ${JSON.stringify(data)}` : message
+        logEl.textContent = `${line}\n${logEl.textContent}`
+    }
+
+    const getIndex = () => Number(document.getElementById('index').value) || 1
+    const getFormat = () => document.getElementById('format').value
+    const getText = () => document.getElementById('text').value
+
+    // --- Get board object content (async) ---
+    document.getElementById('get').addEventListener('click', async () => {
+        const index = getIndex()
+        const format = getFormat()
+        log(`getBoardObjectContent(${index}, { format: '${format}' }) …`)
+        try {
+            const content = await alleo.getBoardObjectContent(index, {format})
+            log('Content received:', content)
+            document.getElementById('text').value = content.join('\n')
+        } catch (err) {
+            log('Error: ' + err.message)
+        }
+    })
+
+    // --- Replace board object content ---
+    document.getElementById('replace').addEventListener('click', () => {
+        const index = getIndex()
+        const format = getFormat()
+        const text = getText()
+        alleo.replaceBoardObjectContent(index, text, {format})
+        log(`replaceBoardObjectContent(${index}) sent`)
+    })
+
+    // --- Append board object content ---
+    document.getElementById('append').addEventListener('click', () => {
+        const index = getIndex()
+        const format = getFormat()
+        const text = getText()
+        alleo.appendBoardObjectContent(index, text, {format})
+        log(`appendBoardObjectContent(${index}) sent`)
+    })
+
+    // --- Global error handler ---
+    const unsubscribe = alleo.onError(({index, error, requestId}) => {
+        log(`boardObjectContentError #${index} (requestId=${requestId}):`, error)
+    })
+</script>
+</body>
+</html>

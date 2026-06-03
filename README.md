@@ -1,0 +1,66 @@
+# Alleo E-widget Template
+
+A GitHub template for building **[Alleo](https://www.withalleo.com) E-widgets**
+with AI coding agents (Codex, Claude Code, GitHub Copilot, and others).
+
+An *E-widget* is a custom widget you embed on an Alleo board: a single,
+self-contained HTML document that runs in a sandboxed iframe and talks to the
+board through the `alleo` SDK.
+
+## How it works
+
+1. **Describe your widget** in [`idea.txt`](./idea.txt) in plain language.
+2. **Ask your AI agent to build it.** The agent reads `idea.txt`, follows the
+   rules in [`AGENTS.md`](./AGENTS.md), and generates the widget.
+3. **Collect the output** from [`dist/`](./dist):
+    - `dist/‹widget-name›.txt` — the widget (full HTML, saved as `.txt`).
+    - `dist/‹widget-name›.README.md` — a build note with assumptions, the
+      widget's actions, and the board settings you need to enable.
+4. **Add it to a board:** open the **E-widget** → **Settings → Source**, then
+   paste the HTML as **Custom HTML** or upload the `.txt` file as **File**.
+
+> The widget is saved with a `.txt` extension because the Alleo E-widget's
+> file picker expects `.txt` for uploaded HTML.
+
+## Quick start
+
+```text
+1. Use this template to create your own repo (green "Use this template" button).
+2. Edit idea.txt with your widget idea.
+3. Run your agent of choice in the repo:
+     • Codex / generic agents → read AGENTS.md
+     • Claude Code            → read CLAUDE.md
+     • GitHub Copilot         → reads .github/copilot-instructions.md
+4. Find the generated widget in dist/.
+```
+
+## Repository layout
+
+| Path                              | Purpose                                                                      |
+|-----------------------------------|------------------------------------------------------------------------------|
+| `idea.txt`                        | **You edit this.** Describes the widget to build.                            |
+| `AGENTS.md`                       | The single source of truth: the task + all coding rules for agents.          |
+| `CLAUDE.md`                       | Pointer to `AGENTS.md` for Claude Code.                                      |
+| `.github/copilot-instructions.md` | Pointer to `AGENTS.md` for GitHub Copilot.                                   |
+| `dist/`                           | Generated widgets land here (`.txt`) with a build note.                      |
+| `docs/`                           | Authoring docs the agent reads while coding (SDK manual, types).             |
+| `docs/reference/`                 | User-facing reference about the E-widget (help, security, events, settings). |
+| `samples/`                        | Runnable example widgets for each SDK capability.                            |
+
+## Documentation
+
+See [`docs/README.md`](./docs/README.md) for the full index. In short:
+
+**Authoring docs** (read while building a widget):
+
+- [`docs/LIBRARY.md`](./docs/LIBRARY.md) — SDK methods, examples, and sandbox limitations.
+- [`docs/ADVANCED.md`](./docs/ADVANCED.md) — full type definitions and message protocol.
+- [`docs/AI-INSTRUCTIONS.md`](./docs/AI-INSTRUCTIONS.md) — the full upstream authoring guide.
+
+**Reference docs** (user-facing advice about the E-widget):
+
+- [`docs/reference/HELP.md`](./docs/reference/HELP.md) — end-user help for the E-widget.
+- [`docs/reference/SECURITY.md`](./docs/reference/SECURITY.md) — sandbox tiers and security options.
+- [`docs/reference/TRACKED-EVENTS.md`](./docs/reference/TRACKED-EVENTS.md) — analytics events emitted by the E-widget.
+
+> The Alleo E-widget is currently a **beta** feature and may change.

@@ -1,0 +1,6 @@
+.idea
+.temp
+
+# Keep the dist/ folder (and its README) tracked, but ignore generated widgets.
+dist/*
+!dist/README.md

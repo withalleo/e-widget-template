@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>EmbedWidgetMessenger - Add Content</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 16px;
+        }
+
+        button {
+            padding: 8px 12px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+<EWidgetSDK/>
+<h1>EmbedWidgetMessenger - Add Content</h1>
+<p>These commands require "Enable adding new content to the board" in settings.</p>
+
+<button id="add-notepad">Add notepad</button>
+<button id="add-sticky">Add sticky note</button>
+<button id="add-html">Add HTML embed</button>
+
+<script>
+    document.getElementById('add-notepad').addEventListener('click', () => {
+        alleo.addContent({
+            type: 'notepad',
+            textFormat: 'markdown',
+            text: '# New note\n\nAdded from iframe.',
+        })
+    })
+
+    document.getElementById('add-sticky').addEventListener('click', () => {
+        alleo.addContent({
+            type: 'sticky-note',
+            text: 'Remember to review the draft',
+            color: '#FFE680',
+            outlineColor: '#B38F00',
+            shape: 'square',
+        })
+    })
+
+    document.getElementById('add-html').addEventListener('click', () => {
+        alleo.addContent({
+            type: 'html',
+            html: '<!doctype html><html><body><h2>Hello from iframe</h2></body></html>',
+        })
+    })
+</script>
+</body>
+</html>
