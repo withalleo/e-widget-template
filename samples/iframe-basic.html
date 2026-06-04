@@ -1,3 +1,21 @@
+<!--
+  WIDGET SUMMARY
+  ==============
+
+  Outgoing actions (triggered via alleo.triggerAction):
+    - onloaded ()                         fired once after init
+    - demo (demo-param: string)           fired when "Trigger action" is clicked
+
+  Incoming actions (handled via alleo.onIncomingAction):
+    - <any> (data?: Record<string, unknown>)   every incoming action is logged
+
+  Synced status:
+    - Reads the full status via alleo.onSyncedStatusUpdate
+    - Requests it via alleo.requestSyncedStatus (does not write)
+
+  ⚠ WARNING: Requires "Enable Alleo board features for enclosed content"
+             (and "Enable synchronizing status" for the status request).
+-->
 <!doctype html>
 <html lang="en">
 <head>
@@ -57,6 +75,11 @@
         alleo.requestSyncedStatus()
         log('requestSyncedStatus sent')
     })
+
+    // Pull any existing shared state, then announce the widget is ready.
+    alleo.requestSyncedStatus()
+    alleo.triggerAction('onloaded')
+    log('onloaded sent')
 </script>
 </body>
 </html>

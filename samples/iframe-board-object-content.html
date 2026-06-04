@@ -1,3 +1,23 @@
+<!--
+  WIDGET SUMMARY
+  ==============
+
+  Outgoing actions (triggered via alleo.triggerAction):
+    - onloaded ()   fired once after init
+
+  Incoming actions (handled via alleo.onIncomingAction):
+    - none
+
+  Board object content (whitelist index N chosen by the user):
+    - Reads object at index N            via alleo.getBoardObjectContent
+    - Writes (replace) object at index N via alleo.replaceBoardObjectContent
+    - Writes (append) object at index N  via alleo.appendBoardObjectContent
+    - Errors handled via alleo.onError
+
+  ⚠ WARNING: Requires "Enable Alleo board features for enclosed content",
+             "Enable reading/writing board object content", and at least one
+             object added to "Whitelisted board objects" in widget settings.
+-->
 <!doctype html>
 <html lang="en">
 <head>
@@ -124,6 +144,9 @@
     const unsubscribe = alleo.onError(({index, error, requestId}) => {
         log(`boardObjectContentError #${index} (requestId=${requestId}):`, error)
     })
+
+    // Listeners attached — announce the widget is ready.
+    alleo.triggerAction('onloaded')
 </script>
 </body>
 </html>

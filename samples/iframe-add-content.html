@@ -1,3 +1,21 @@
+<!--
+  WIDGET SUMMARY
+  ==============
+
+  Outgoing actions (triggered via alleo.triggerAction):
+    - onloaded ()   fired once after init
+
+  Incoming actions (handled via alleo.onIncomingAction):
+    - none
+
+  Board content (added via alleo.addContent):
+    - notepad      (textFormat: 'markdown', text: string)
+    - sticky-note  (text, color, outlineColor, shape)
+    - html         (html: string)
+
+  ⚠ WARNING: Requires "Enable Alleo board features for enclosed content"
+             and "Enable adding new content to the board".
+-->
 <!doctype html>
 <html lang="en">
 <head>
@@ -51,6 +69,9 @@
             html: '<!doctype html><html><body><h2>Hello from iframe</h2></body></html>',
         })
     })
+
+    // Listeners attached — announce the widget is ready.
+    alleo.triggerAction('onloaded')
 </script>
 </body>
 </html>

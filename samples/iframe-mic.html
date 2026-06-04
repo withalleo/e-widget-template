@@ -1,3 +1,22 @@
+<!--
+  WIDGET SUMMARY
+  ==============
+
+  Outgoing actions (triggered via alleo.triggerAction):
+    - onloaded ()   fired once after init
+
+  Incoming actions (handled via alleo.onIncomingAction):
+    - none
+
+  Microphone (via alleo.mic):
+    - start({ timeslice }) / stop()
+    - onTrack registered BEFORE start(); onStarted / onStopped / onError handled
+
+  ⚠ WARNING: This widget requests microphone access via alleo.mic. The user must
+             enable "Allow content access to the microphone". The parent prompts
+             for permission on the first alleo.mic.start() call. (Camera access is
+             not available inside the iframe.)
+-->
 <!doctype html>
 <html lang="en">
 <head>
@@ -153,6 +172,9 @@
         alleo.mic.stop()
         log('mic.stop()')
     })
+
+    // Mic handlers registered and listeners attached — announce readiness.
+    alleo.triggerAction('onloaded')
 </script>
 </body>
 </html>
