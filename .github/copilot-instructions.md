@@ -25,8 +25,10 @@ If `idea.txt` is empty, stop and ask the user to fill it in.
 - Use the `alleo` SDK; add `<EWidgetSDK />` once in `<body>` before any script.
 - Fire `alleo.triggerAction('onloaded')` exactly once after full init.
 - Fire outgoing actions on every meaningful interaction; handle incoming actions.
-- Append the importable `WIDGETSETTINGS:` footer as the last content in the file,
-  matching the actions/features the HTML uses (see `docs/IMPORT-FOOTER.md`).
+- Append the importable `WIDGETSETTINGS:` footer as the last content in the file.
+  The footer is **mandatory** and must include the **full required key set** (set
+  unused features to `false` / `[]` / empty), matching the actions/features the
+  HTML uses (see `docs/IMPORT-FOOTER.md`).
 - The iframe is sandboxed — no `localStorage`, cookies, `window.open`, `alert`,
   `getUserMedia`, etc. Use the SDK equivalents.
 - Authoring docs (read while coding): `docs/LIBRARY.md` (SDK manual),

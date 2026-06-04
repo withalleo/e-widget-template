@@ -157,12 +157,24 @@
 <!--
 WIDGETSETTINGS:
 {
-    "enableIframeCommunication": true,
-    "enableIframeFuncBoardObjectContent": true,
     "iframeAllowScripts": true,
+    "iframeAllowForms": false,
+    "iframeAllowOrientationLock": false,
+    "iframeAllowPointerLock": false,
+    "iframeDisableUserActions": false,
+    "iframeDisableScrolling": false,
+    "iframeReferrerPolicy": "no-referrer",
+    "iframeUnloadWhenOffScreen": true,
+    "enableIframeCommunication": true,
+    "enableIframeFuncAddContent": false,
+    "enableSyncedStatus": false,
+    "enableIframeFuncBoardObjectContent": true,
     "boardObjectWhitelist": [],
-    "backgroundColor": "#FFFFFF",
+    "incomingActions": [],
     "outgoingActions": [],
-    "incomingActions": []
+    "backgroundColor": "#FFFFFF",
+    "overwriteTextColor": false,
+    "textColor": "",
+    "iframeAllowMicrophone": false
 }
 -->

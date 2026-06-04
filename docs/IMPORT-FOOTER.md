@@ -24,14 +24,66 @@ The recommended file name suffix is `.Alleo-eWidget.txt` (`.Alleo-eWidget` is al
 
 ## Exact footer format
 
-Append the footer at the **very end** of the file, after the closing `</html>`. Use this exact shape:
+Append the footer at the **very end** of the file, after the closing `</html>`.
+
+> **The footer is mandatory and so is every key in it.** Unlike older guidance,
+> the footer is **not** optional decoration and you may **not** cherry-pick keys.
+> Every widget you generate **must** emit the footer with the **complete set of
+> required keys** below — present, explicitly set, every time. When a feature is
+> not used by the widget, still include its key and set it to its "off" value
+> (`false`, `[]`, or the documented empty/default value). Never omit a required
+> key to "fall back to a default".
+
+### Required keys — always present in every footer
+
+These keys **must appear in every generated footer**, with explicit values:
+
+| Key                                  | "Off" / empty value when unused |
+| ------------------------------------ | ------------------------------- |
+| `iframeAllowScripts`                 | `true` (keep `true` — every widget runs JS) |
+| `iframeAllowForms`                   | `false` |
+| `iframeAllowOrientationLock`         | `false` |
+| `iframeAllowPointerLock`             | `false` |
+| `iframeDisableUserActions`           | `false` |
+| `iframeDisableScrolling`             | `false` |
+| `iframeReferrerPolicy`               | `"no-referrer"` |
+| `iframeUnloadWhenOffScreen`          | `true` |
+| `enableIframeCommunication`          | `false` |
+| `enableIframeFuncAddContent`         | `false` |
+| `enableSyncedStatus`                 | `false` |
+| `enableIframeFuncBoardObjectContent` | `false` |
+| `incomingActions`                    | `[]` |
+| `outgoingActions`                    | `[]` |
+| `backgroundColor`                    | `"transparent"` (or your chosen background) |
+| `overwriteTextColor`                 | `false` |
+| `textColor`                          | `""` (or your chosen text color) |
+| `iframeAllowMicrophone`              | `false` |
+
+Use this canonical shape as the starting point and turn on only the flags the
+widget actually needs (see *Make the settings match the generated HTML* below):
 
 ```html
 <!--
 WIDGETSETTINGS:
 {
+    "iframeAllowScripts": true,
+    "iframeAllowForms": false,
+    "iframeAllowOrientationLock": false,
+    "iframeAllowPointerLock": false,
+    "iframeDisableUserActions": false,
+    "iframeDisableScrolling": false,
+    "iframeReferrerPolicy": "no-referrer",
+    "iframeUnloadWhenOffScreen": true,
     "enableIframeCommunication": true,
-    "outgoingActions": []
+    "enableIframeFuncAddContent": false,
+    "enableSyncedStatus": false,
+    "enableIframeFuncBoardObjectContent": false,
+    "incomingActions": [],
+    "outgoingActions": [],
+    "backgroundColor": "#051825",
+    "overwriteTextColor": false,
+    "textColor": "",
+    "iframeAllowMicrophone": false
 }
 -->
 ```
@@ -43,7 +95,11 @@ Hard requirements — the import parser will silently reject the file (or ignore
 - The content between `WIDGETSETTINGS:` and `-->` **must be a single valid JSON object** (`{ ... }`). It is parsed with `JSON.parse`; trailing commas, comments, single quotes, or `undefined` will make parsing fail and the whole import is rejected.
 - The JSON **must not** contain the sequence `-->` anywhere inside string values, or the comment terminates early. Avoid embedding raw HTML comments in any string setting.
 - Only include keys from the **allowed settings list** below. Any key outside that list throws an error and aborts the import — do **not** add `htmlContent`, `sourceType`, `url`, or `fileId`; those are derived automatically.
-- Every key you include is optional. Omit a setting to fall back to its default; only include the settings your widget actually needs.
+- **Every key in the "Required keys" table above is mandatory** — include all of
+  them in every footer, with an explicit value. Set unused features to their
+  "off" value (`false` / `[]` / empty), never omit them. Keys not in that table
+  (e.g. `newContentContainer`, `boardObjectWhitelist`) remain optional and are
+  added only when relevant.
 
 Separate the HTML and the footer with a blank line for readability (the parser trims trailing whitespace from the HTML automatically).
 
@@ -138,7 +194,10 @@ The footer is not decoration — it must reflect what the HTML code actually doe
 8. **Forms:** if the HTML submits a `<form>`, keep `iframeAllowForms: true`.
 9. **Appearance:** if you chose a specific background in the design, mirror it in `backgroundColor` so the iframe frame matches the content.
 
-If a capability is **not** used by the HTML, leave its flag at the default (omit it). Do not enable permissions the widget does not need.
+If a capability is **not** used by the HTML, **still include its key** in the
+footer and set it to its "off" value (`false` / `[]` / empty) — see the
+*Required keys* table. Do not omit it, and do not enable permissions the widget
+does not need.
 
 ---
 
@@ -149,9 +208,10 @@ If a capability is **not** used by the HTML, leave its flag at the default (omit
 - [ ] The JSON parses with `JSON.parse` — double-quoted keys/strings, no trailing commas, no comments, no `undefined`.
 - [ ] No `-->` appears inside any JSON string value.
 - [ ] Only allowed keys are present; no `htmlContent`, `sourceType`, `url`, or `fileId`.
+- [ ] **All required keys are present** (the full *Required keys* table), each with an explicit value; unused features set to `false` / `[]` / empty rather than omitted.
 - [ ] `enableIframeCommunication` is `true` whenever the HTML uses `alleo.*`.
 - [ ] Every `outgoingActions` / `incomingActions` `id` and parameter `id` exactly matches the HTML.
-- [ ] Each feature flag (`enableSyncedStatus`, `enableIframeFuncAddContent`, `enableIframeFuncBoardObjectContent`, `iframeAllowMicrophone`) is set only when the HTML actually uses that feature.
+- [ ] Each feature flag (`enableSyncedStatus`, `enableIframeFuncAddContent`, `enableIframeFuncBoardObjectContent`, `iframeAllowMicrophone`) is `true` only when the HTML actually uses that feature, and `false` otherwise.
 - [ ] `onloaded` is documented in the HTML summary comment but **not** added to `outgoingActions`.
 
 ---
@@ -169,10 +229,24 @@ A button widget that fires `submit` (with a `label` string) and accepts an incom
 <!--
 WIDGETSETTINGS:
 {
-    "enableIframeCommunication": true,
-    "enableSyncedStatus": true,
     "iframeAllowScripts": true,
-    "backgroundColor": "#051825",
+    "iframeAllowForms": false,
+    "iframeAllowOrientationLock": false,
+    "iframeAllowPointerLock": false,
+    "iframeDisableUserActions": false,
+    "iframeDisableScrolling": false,
+    "iframeReferrerPolicy": "no-referrer",
+    "iframeUnloadWhenOffScreen": true,
+    "enableIframeCommunication": true,
+    "enableIframeFuncAddContent": false,
+    "enableSyncedStatus": true,
+    "enableIframeFuncBoardObjectContent": false,
+    "incomingActions": [
+        {
+            "id": "reset",
+            "label": "Reset"
+        }
+    ],
     "outgoingActions": [
         {
             "id": "submit",
@@ -182,12 +256,10 @@ WIDGETSETTINGS:
             ]
         }
     ],
-    "incomingActions": [
-        {
-            "id": "reset",
-            "label": "Reset"
-        }
-    ]
+    "backgroundColor": "#051825",
+    "overwriteTextColor": false,
+    "textColor": "",
+    "iframeAllowMicrophone": false
 }
 -->
 ```

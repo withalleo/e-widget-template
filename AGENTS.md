@@ -348,16 +348,34 @@ actually does. On import, Alleo stores everything before the footer as the
 widget's HTML and applies the footer settings. Without it, the user must enable
 every capability by hand.
 
-Always emit this footer when you finish the HTML. It is the **machine-readable
-source of truth for the actions** (the top-of-file comment is the human-readable
-summary). Keep the two in sync.
+The footer is **mandatory and not optional**, and so is its full set of keys.
+**Every generated widget must emit the footer with the complete required key set
+below**, each key explicitly set. When a feature is unused, still include its key
+and set it to its "off" value (`false` / `[]` / empty) — never omit a required
+key.
 
 ```html
 <!--
 WIDGETSETTINGS:
 {
+    "iframeAllowScripts": true,
+    "iframeAllowForms": false,
+    "iframeAllowOrientationLock": false,
+    "iframeAllowPointerLock": false,
+    "iframeDisableUserActions": false,
+    "iframeDisableScrolling": false,
+    "iframeReferrerPolicy": "no-referrer",
+    "iframeUnloadWhenOffScreen": true,
     "enableIframeCommunication": true,
-    "outgoingActions": []
+    "enableIframeFuncAddContent": false,
+    "enableSyncedStatus": false,
+    "enableIframeFuncBoardObjectContent": false,
+    "incomingActions": [],
+    "outgoingActions": [],
+    "backgroundColor": "#051825",
+    "overwriteTextColor": false,
+    "textColor": "",
+    "iframeAllowMicrophone": false
 }
 -->
 ```
@@ -372,10 +390,11 @@ Hard rules:
 - Never let the sequence `-->` appear inside a JSON string value.
 - Include **only** allowed keys. Never emit `htmlContent`, `sourceType`, `url`, or
   `fileId` — those are derived on import; any other key aborts the import.
-- Set `enableIframeCommunication: true` whenever the HTML uses `alleo.*`, and turn
-  on each feature flag (`enableSyncedStatus`, `enableIframeFuncAddContent`,
-  `enableIframeFuncBoardObjectContent`, `iframeAllowMicrophone`) only when the HTML
-  actually uses it.
+- **All keys shown above are required in every footer** — present and explicitly
+  set. Set `enableIframeCommunication: true` whenever the HTML uses `alleo.*`, and
+  turn each feature flag (`enableSyncedStatus`, `enableIframeFuncAddContent`,
+  `enableIframeFuncBoardObjectContent`, `iframeAllowMicrophone`) `true` only when
+  the HTML actually uses it — otherwise keep it `false`. Do not drop unused keys.
 - Add one `outgoingActions` entry per `alleo.triggerAction('<id>', data)` (one
   `outputData` slot per `data` key) and one `incomingActions` entry per id handled
   in `alleo.onIncomingAction` (with `inputData` slots). The ids and parameter ids
@@ -417,7 +436,8 @@ complete HTML document plus a matching footer.
   added to the summary.
 - [ ] Valid plain ES2020+ only; class-based; config block at top with JSDoc; every member documented.
 - [ ] Importable `WIDGETSETTINGS:` footer appended as the **last** content, after `</html>`; valid JSON, only allowed
-  keys, feature flags and action ids/params match the HTML, `onloaded` not listed.
+  keys, **all required keys present and explicitly set** (unused features `false` / `[]` / empty), feature flags and
+  action ids/params match the HTML, `onloaded` not listed.
 
 ---
 

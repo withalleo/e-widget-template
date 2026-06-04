@@ -659,8 +659,24 @@ A button that triggers an outgoing action and keeps its color in sync across all
 <!--
 WIDGETSETTINGS:
 {
+    "iframeAllowScripts": true,
+    "iframeAllowForms": false,
+    "iframeAllowOrientationLock": false,
+    "iframeAllowPointerLock": false,
+    "iframeDisableUserActions": false,
+    "iframeDisableScrolling": false,
+    "iframeReferrerPolicy": "no-referrer",
+    "iframeUnloadWhenOffScreen": true,
     "enableIframeCommunication": true,
+    "enableIframeFuncAddContent": false,
     "enableSyncedStatus": true,
+    "enableIframeFuncBoardObjectContent": false,
+    "incomingActions": [
+        {
+            "id": "reset",
+            "label": "Reset"
+        }
+    ],
     "outgoingActions": [
         {
             "id": "submit",
@@ -670,12 +686,10 @@ WIDGETSETTINGS:
             ]
         }
     ],
-    "incomingActions": [
-        {
-            "id": "reset",
-            "label": "Reset"
-        }
-    ]
+    "backgroundColor": "#051825",
+    "overwriteTextColor": false,
+    "textColor": "",
+    "iframeAllowMicrophone": false
 }
 -->
 ```
@@ -688,14 +702,35 @@ The widget can be **imported as a single file** that bundles both the HTML and i
 
 Always emit this footer when you finish the HTML. Keep the settings consistent with what the HTML actually does.
 
+The footer is **mandatory, and so is its full set of keys.** Every generated
+widget must emit the footer with **all of the required keys below**, each
+explicitly set. When a feature is unused, **still include its key** and set it to
+its "off" value (`false` / `[]` / empty) — never omit a required key.
+
 ### Footer format
 
 ```html
 <!--
 WIDGETSETTINGS:
 {
+    "iframeAllowScripts": true,
+    "iframeAllowForms": false,
+    "iframeAllowOrientationLock": false,
+    "iframeAllowPointerLock": false,
+    "iframeDisableUserActions": false,
+    "iframeDisableScrolling": false,
+    "iframeReferrerPolicy": "no-referrer",
+    "iframeUnloadWhenOffScreen": true,
     "enableIframeCommunication": true,
-    "outgoingActions": []
+    "enableIframeFuncAddContent": false,
+    "enableSyncedStatus": false,
+    "enableIframeFuncBoardObjectContent": false,
+    "incomingActions": [],
+    "outgoingActions": [],
+    "backgroundColor": "#051825",
+    "overwriteTextColor": false,
+    "textColor": "",
+    "iframeAllowMicrophone": false
 }
 -->
 ```
@@ -707,7 +742,11 @@ Hard rules:
 - The content between `WIDGETSETTINGS:` and `-->` **must be one valid JSON object** parseable by `JSON.parse` — double-quoted keys/strings, no trailing commas, no comments, no `undefined`.
 - Never let the sequence `-->` appear inside a JSON string value.
 - Include **only** keys from the allowed list below. Never emit `htmlContent`, `sourceType`, `url`, or `fileId` — those are derived on import. Any other key aborts the import.
-- Every key is optional; omit a setting to keep its default. Only enable what the HTML actually uses.
+- **Every key shown in the footer above is required** — include all of them in
+  every footer with an explicit value. Set unused features to their "off" value
+  (`false` / `[]` / empty); never omit them. Enable a flag (`true`) only when the
+  HTML actually uses that feature. The remaining keys (`boardObjectWhitelist`,
+  `newContentContainer`) stay optional and are added only when relevant.
 
 ### Allowed settings
 
@@ -816,5 +855,6 @@ If a capability is not used, omit its flag.
 - [ ] An importable settings footer is appended as the **last** content in the file, after `</html>`.
 - [ ] The footer is a single `<!-- ... -->` comment containing the literal `WIDGETSETTINGS:` token followed by a valid `JSON.parse`-able object (no trailing commas/comments/`undefined`, no `-->` inside strings).
 - [ ] The footer contains only allowed keys — no `htmlContent`, `sourceType`, `url`, or `fileId`.
-- [ ] `enableIframeCommunication` is `true` in the footer whenever the HTML uses `alleo.*`, and every feature flag matches the capabilities the HTML actually uses.
+- [ ] The footer includes **all required keys** (full key set), each explicitly set; unused features set to `false` / `[]` / empty rather than omitted.
+- [ ] `enableIframeCommunication` is `true` in the footer whenever the HTML uses `alleo.*`, and every feature flag matches the capabilities the HTML actually uses (`false` when unused).
 - [ ] Every `outgoingActions` / `incomingActions` entry (and each parameter `id`/`type`) in the footer matches the action ids and data keys used in the HTML; `onloaded` is not listed in `outgoingActions`.
