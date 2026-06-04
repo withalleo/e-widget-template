@@ -60,7 +60,7 @@ alleo.triggerAction('demo', {
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>EmbedWidgetMessenger - Basic</title>
+    <title>Alleo E-widget — Basic actions</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -79,7 +79,7 @@ alleo.triggerAction('demo', {
 </head>
 <body>
 <EWidgetSDK>
-    <h1>EmbedWidgetMessenger - Basic</h1>
+    <h1>Alleo E-widget — Basic actions</h1>
     <p>This page is intended to run inside the E-widget iframe.</p>
 
     <button id="trigger">Trigger action</button>
@@ -156,7 +156,7 @@ Union of the following shapes:
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>EmbedWidgetMessenger - Add Content</title>
+    <title>Alleo E-widget — Add content</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -172,7 +172,7 @@ Union of the following shapes:
 </head>
 <body>
 <EWidgetSDK>
-    <h1>EmbedWidgetMessenger - Add Content</h1>
+    <h1>Alleo E-widget — Add content</h1>
     <p>These commands require "Enable adding new content to the board" in settings.</p>
 
     <button id="add-notepad">Add notepad</button>
@@ -252,7 +252,7 @@ alleo.setSyncedStatus({
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>EmbedWidgetMessenger - Synced Status</title>
+    <title>Alleo E-widget — Synced status</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -268,7 +268,7 @@ alleo.setSyncedStatus({
 </head>
 <body>
 <EWidgetSDK>
-    <h1>EmbedWidgetMessenger - Synced Status</h1>
+    <h1>Alleo E-widget — Synced status</h1>
     <p>Click the button to set a random color in synced status.</p>
 
     <button id="color">Set random color</button>
@@ -366,7 +366,7 @@ console.log(content.join('\n'))
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>EmbedWidgetMessenger - Board Object Content</title>
+    <title>Alleo E-widget — Board object content</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -645,7 +645,7 @@ Each returns an unsubscribe function.
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <title>EmbedWidgetMessenger - Microphone</title>
+    <title>Alleo E-widget — Microphone</title>
 </head>
 <body>
 <EWidgetSDK>

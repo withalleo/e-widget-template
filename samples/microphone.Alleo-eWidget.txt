@@ -2,6 +2,9 @@
   WIDGET SUMMARY
   ==============
 
+  An Alleo E-widget that captures microphone audio through the alleo.mic
+  bridge and visualises it as a live waveform.
+
   Outgoing actions (triggered via alleo.triggerAction):
     - onloaded ()   fired once after init
 
@@ -22,7 +25,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>EmbedWidgetMessenger - Microphone</title>
+    <title>Alleo E-widget — Microphone</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -65,9 +68,9 @@
 </head>
 <body>
 <EWidgetSDK/>
-<h1>Microphone</h1>
+<h1>Alleo E-widget — Microphone</h1>
 <p>
-    These commands require <strong>Enable microphone access</strong> in the widget settings.
+    These commands require <strong>Allow content access to the microphone</strong> in the widget settings.
     The parent will prompt the user for microphone permission the first time
     <code>alleo.mic.start()</code> is called.
 </p>
@@ -178,3 +181,13 @@
 </script>
 </body>
 </html>
+
+<!--
+WIDGETSETTINGS:
+{
+    "enableIframeCommunication": true,
+    "iframeAllowMicrophone": true,
+    "iframeAllowScripts": true,
+    "outgoingActions": []
+}
+-->

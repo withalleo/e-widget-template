@@ -2,6 +2,9 @@
   WIDGET SUMMARY
   ==============
 
+  An Alleo E-widget that reads and writes the text of a whitelisted board
+  object (get / replace / append).
+
   Outgoing actions (triggered via alleo.triggerAction):
     - onloaded ()   fired once after init
 
@@ -14,16 +17,16 @@
     - Writes (append) object at index N  via alleo.appendBoardObjectContent
     - Errors handled via alleo.onError
 
-  ⚠ WARNING: Requires "Enable Alleo board features for enclosed content",
-             "Enable reading/writing board object content", and at least one
-             object added to "Whitelisted board objects" in widget settings.
+  ⚠ REQUIRED SETTINGS: "Enable Alleo board features for enclosed content",
+     "Enable reading/writing board object content", and at least one object
+     added to "Whitelisted board objects" in widget settings.
 -->
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>EmbedWidgetMessenger - Board Object Content</title>
+    <title>Alleo E-widget — Board object content</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -66,9 +69,9 @@
 </head>
 <body>
 <EWidgetSDK/>
-<h1>Board Object Content</h1>
+<h1>Alleo E-widget — Board object content</h1>
 <p>
-    These commands require <strong>Enable board object content functions</strong>
+    These commands require <strong>Enable reading/writing board object content</strong>
     and at least one whitelisted board object in settings.
 </p>
 
@@ -150,3 +153,14 @@
 </script>
 </body>
 </html>
+
+<!--
+WIDGETSETTINGS:
+{
+    "enableIframeCommunication": true,
+    "enableIframeFuncBoardObjectContent": true,
+    "iframeAllowScripts": true,
+    "boardObjectWhitelist": [],
+    "outgoingActions": []
+}
+-->

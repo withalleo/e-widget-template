@@ -188,6 +188,9 @@ object operations, and any warnings.
 - `onloaded` is **always the first outgoing action listed.**
 - Include `⚠ WARNING` lines only when the widget genuinely needs those features.
 - Omit sections that have no entries.
+- This comment is the human-readable summary; the importable settings footer (see
+  *Importable settings footer* below) is the machine-readable source of truth for
+  the actions. Keep them consistent.
 
 ---
 
@@ -336,6 +339,54 @@ alleo.setSyncedStatus({selectedIndex: 2, filterText: 'active'})
 
 ---
 
+## Importable settings footer
+
+To make the widget **importable as a single file**, append a settings footer at
+the **very end** of the file, after the closing `</html>`. The footer is one HTML
+comment whose JSON pre-configures the Alleo settings so they match what the HTML
+actually does. On import, Alleo stores everything before the footer as the
+widget's HTML and applies the footer settings. Without it, the user must enable
+every capability by hand.
+
+Always emit this footer when you finish the HTML. It is the **machine-readable
+source of truth for the actions** (the top-of-file comment is the human-readable
+summary). Keep the two in sync.
+
+```html
+<!--
+WIDGETSETTINGS:
+{
+    "enableIframeCommunication": true,
+    "outgoingActions": []
+}
+-->
+```
+
+Hard rules:
+
+- The footer **must be the last content in the file**, after `</html>`; only
+  whitespace may follow `-->`.
+- It **must** contain the literal token `WIDGETSETTINGS:` immediately before the
+  JSON, which must be one `JSON.parse`-able object (double-quoted keys/strings, no
+  trailing commas, no comments, no `undefined`).
+- Never let the sequence `-->` appear inside a JSON string value.
+- Include **only** allowed keys. Never emit `htmlContent`, `sourceType`, `url`, or
+  `fileId` — those are derived on import; any other key aborts the import.
+- Set `enableIframeCommunication: true` whenever the HTML uses `alleo.*`, and turn
+  on each feature flag (`enableSyncedStatus`, `enableIframeFuncAddContent`,
+  `enableIframeFuncBoardObjectContent`, `iframeAllowMicrophone`) only when the HTML
+  actually uses it.
+- Add one `outgoingActions` entry per `alleo.triggerAction('<id>', data)` (one
+  `outputData` slot per `data` key) and one `incomingActions` entry per id handled
+  in `alleo.onIncomingAction` (with `inputData` slots). The ids and parameter ids
+  **must exactly match** the strings used in the HTML. Do **not** list `onloaded`.
+
+The full key list, the `StoredActionTrigger` shape, and a worked example are in
+**`docs/IMPORT-FOOTER.md`**. The `samples/*.Alleo-eWidget.txt` files each show a
+complete HTML document plus a matching footer.
+
+---
+
 ## Responsive layout
 
 - Assume a default size of **1280×720**, but the user can resize/scale the widget
@@ -349,7 +400,7 @@ alleo.setSyncedStatus({selectedIndex: 2, filterText: 'active'})
 ## Checklist before finalizing
 
 - [ ] Read `idea.txt`; recorded any assumptions in the build note.
-- [ ] Output written to `dist/<name>.txt` (HTML content, `.txt` extension).
+- [ ] Output written to `dist/<name>.Alleo-eWidget.txt` (HTML content + settings footer, `.txt` extension).
 - [ ] Build note written to `dist/<name>.README.md`.
 - [ ] Single self-contained HTML document; no external file references (other than API/CDN).
 - [ ] `<EWidgetSDK />` (or the external-URL script) loads before any other script.
@@ -365,6 +416,8 @@ alleo.setSyncedStatus({selectedIndex: 2, filterText: 'active'})
 - [ ] If using mic: `onTrack` registered before `start()`, `onError` handled, `stop()` called when done, and a ⚠ warning
   added to the summary.
 - [ ] Valid plain ES2020+ only; class-based; config block at top with JSDoc; every member documented.
+- [ ] Importable `WIDGETSETTINGS:` footer appended as the **last** content, after `</html>`; valid JSON, only allowed
+  keys, feature flags and action ids/params match the HTML, `onloaded` not listed.
 
 ---
 
@@ -377,6 +430,7 @@ audience so you know what to read while building vs. what is user-facing advice.
 
 - `docs/LIBRARY.md` — SDK methods with full examples and the limitations list. **Primary SDK manual.**
 - `docs/ADVANCED.md` — full type definitions and message protocol.
+- `docs/IMPORT-FOOTER.md` — the importable settings footer: format, allowed keys, and worked example.
 - `docs/AI-INSTRUCTIONS.md` — the full upstream authoring guide (this file is the adapted, authoritative version).
 
 **Reference docs — user-facing advice, not authoring instructions (you usually do not need these):**
@@ -385,4 +439,6 @@ audience so you know what to read while building vs. what is user-facing advice.
 - `docs/reference/SECURITY.md` — sandbox tiers and security options.
 - `docs/reference/TRACKED-EVENTS.md` — analytics events emitted by the E-widget.
 
-**Runnable examples:** the `samples/` folder (one widget per SDK capability).
+**Runnable examples:** the `samples/` folder — one importable
+`*.Alleo-eWidget.txt` widget per SDK capability (each is full HTML plus a matching
+`WIDGETSETTINGS:` footer).

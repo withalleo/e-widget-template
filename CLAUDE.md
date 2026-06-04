@@ -10,8 +10,10 @@ task and all coding rules.**
 1. Read [`idea.txt`](./idea.txt) — it describes the widget to build.
 2. Generate one self-contained Alleo E-widget (a single HTML document) that
    fulfils the idea, following every rule in `AGENTS.md`.
-3. Write the result to `dist/<widget-name>.txt` — the file content is full HTML,
-   but the extension is `.txt` (the Alleo file picker expects `.txt`).
+3. Write the result to `dist/<widget-name>.Alleo-eWidget.txt` — the file content
+   is full HTML followed by a `WIDGETSETTINGS:` import footer, but the extension
+   is `.txt` (the Alleo file picker expects `.txt`). See
+   [`docs/IMPORT-FOOTER.md`](./docs/IMPORT-FOOTER.md) for the footer.
 4. Write a build note to `dist/<widget-name>.README.md` summarising what you
    built, your assumptions, the actions, and the widget settings the user must
    enable.

@@ -2,6 +2,9 @@
   WIDGET SUMMARY
   ==============
 
+  An Alleo E-widget that adds new objects (notepad, sticky note, HTML embed)
+  to the board.
+
   Outgoing actions (triggered via alleo.triggerAction):
     - onloaded ()   fired once after init
 
@@ -13,15 +16,15 @@
     - sticky-note  (text, color, outlineColor, shape)
     - html         (html: string)
 
-  ⚠ WARNING: Requires "Enable Alleo board features for enclosed content"
-             and "Enable adding new content to the board".
+  ⚠ REQUIRED SETTINGS: "Enable Alleo board features for enclosed content"
+     and "Enable adding new content to the board".
 -->
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>EmbedWidgetMessenger - Add Content</title>
+    <title>Alleo E-widget — Add content</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -37,7 +40,7 @@
 </head>
 <body>
 <EWidgetSDK/>
-<h1>EmbedWidgetMessenger - Add Content</h1>
+<h1>Alleo E-widget — Add content</h1>
 <p>These commands require "Enable adding new content to the board" in settings.</p>
 
 <button id="add-notepad">Add notepad</button>
@@ -75,3 +78,13 @@
 </script>
 </body>
 </html>
+
+<!--
+WIDGETSETTINGS:
+{
+    "enableIframeCommunication": true,
+    "enableIframeFuncAddContent": true,
+    "iframeAllowScripts": true,
+    "outgoingActions": []
+}
+-->

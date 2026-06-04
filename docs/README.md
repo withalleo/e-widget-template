@@ -35,3 +35,5 @@ they help the human configure Alleo and understand its behavior.
 
 See [`../samples/`](../samples) for minimal, working widgets covering each SDK
 capability (basic actions, synced status, add-content, board-object content, mic).
+Each is a ready-to-import `*.Alleo-eWidget.txt` file: a complete HTML document
+followed by a matching `WIDGETSETTINGS:` footer.

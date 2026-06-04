@@ -13,14 +13,17 @@ board through the `alleo` SDK.
 2. **Ask your AI agent to build it.** The agent reads `idea.txt`, follows the
    rules in [`AGENTS.md`](./AGENTS.md), and generates the widget.
 3. **Collect the output** from [`dist/`](./dist):
-    - `dist/‹widget-name›.txt` — the widget (full HTML, saved as `.txt`).
+    - `dist/‹widget-name›.Alleo-eWidget.txt` — the importable widget (full HTML
+      plus a `WIDGETSETTINGS:` footer, saved as `.txt`).
     - `dist/‹widget-name›.README.md` — a build note with assumptions, the
       widget's actions, and the board settings you need to enable.
 4. **Add it to a board:** open the **E-widget** → **Settings → Source**, then
-   paste the HTML as **Custom HTML** or upload the `.txt` file as **File**.
+   paste the HTML as **Custom HTML** or upload the `.Alleo-eWidget.txt` file as
+   **File** (importing the file also applies the footer settings automatically).
 
 > The widget is saved with a `.txt` extension because the Alleo E-widget's
-> file picker expects `.txt` for uploaded HTML.
+> file picker expects `.txt` for uploaded HTML. The recommended suffix is
+> `.Alleo-eWidget.txt`.
 
 ## Quick start
 
@@ -42,10 +45,10 @@ board through the `alleo` SDK.
 | `AGENTS.md`                       | The single source of truth: the task + all coding rules for agents.          |
 | `CLAUDE.md`                       | Pointer to `AGENTS.md` for Claude Code.                                      |
 | `.github/copilot-instructions.md` | Pointer to `AGENTS.md` for GitHub Copilot.                                   |
-| `dist/`                           | Generated widgets land here (`.txt`) with a build note.                      |
-| `docs/`                           | Authoring docs the agent reads while coding (SDK manual, types).             |
+| `dist/`                           | Generated widgets land here (`.Alleo-eWidget.txt`) with a build note.         |
+| `docs/`                           | Authoring docs the agent reads while coding (SDK manual, types, footer).      |
 | `docs/reference/`                 | User-facing reference about the E-widget (help, security, events, settings). |
-| `samples/`                        | Runnable example widgets for each SDK capability.                            |
+| `samples/`                        | Importable example widgets (`.Alleo-eWidget.txt`) for each SDK capability.    |
 
 ## Documentation
 
@@ -55,6 +58,7 @@ See [`docs/README.md`](./docs/README.md) for the full index. In short:
 
 - [`docs/LIBRARY.md`](./docs/LIBRARY.md) — SDK methods, examples, and sandbox limitations.
 - [`docs/ADVANCED.md`](./docs/ADVANCED.md) — full type definitions and message protocol.
+- [`docs/IMPORT-FOOTER.md`](./docs/IMPORT-FOOTER.md) — the importable `WIDGETSETTINGS:` footer format and allowed keys.
 - [`docs/AI-INSTRUCTIONS.md`](./docs/AI-INSTRUCTIONS.md) — the full upstream authoring guide.
 
 **Reference docs** (user-facing advice about the E-widget):
