@@ -161,6 +161,8 @@ WIDGETSETTINGS:
     "enableIframeFuncBoardObjectContent": true,
     "iframeAllowScripts": true,
     "boardObjectWhitelist": [],
-    "outgoingActions": []
+    "backgroundColor": "#FFFFFF",
+    "outgoingActions": [],
+    "incomingActions": []
 }
 -->

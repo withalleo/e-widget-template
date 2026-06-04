@@ -85,6 +85,8 @@ WIDGETSETTINGS:
     "enableIframeCommunication": true,
     "enableIframeFuncAddContent": true,
     "iframeAllowScripts": true,
-    "outgoingActions": []
+    "outgoingActions": [],
+    "incomingActions": [],
+    "backgroundColor": "#FFFFFF"
 }
 -->

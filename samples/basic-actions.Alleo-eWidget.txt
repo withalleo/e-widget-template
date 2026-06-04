@@ -93,6 +93,7 @@ WIDGETSETTINGS:
     "enableIframeCommunication": true,
     "enableSyncedStatus": true,
     "iframeAllowScripts": true,
+    "backgroundColor": "#FFFFFF",
     "outgoingActions": [
         {
             "id": "demo",

@@ -188,6 +188,8 @@ WIDGETSETTINGS:
     "enableIframeCommunication": true,
     "iframeAllowMicrophone": true,
     "iframeAllowScripts": true,
-    "outgoingActions": []
+    "backgroundColor": "#FFFFFF",
+    "outgoingActions": [],
+    "incomingActions": []
 }
 -->

@@ -76,6 +76,8 @@ WIDGETSETTINGS:
     "enableIframeCommunication": true,
     "enableSyncedStatus": true,
     "iframeAllowScripts": true,
-    "outgoingActions": []
+    "backgroundColor": "#FFFFFF",
+    "outgoingActions": [],
+    "incomingActions": []
 }
 -->
