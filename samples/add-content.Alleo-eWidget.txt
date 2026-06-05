@@ -76,7 +76,7 @@
         /** @type {{type: string, html: string}} HTML-embed object template. */
         htmlTemplate = {
             type: 'html',
-            html: '<!doctype html><html><body><h2>Hello from iframe</h2></body></html>',
+            html: '<!doctype html><html><body style="background-color: black; color: white;"><h2>Hello from iframe</h2></body></html>',
         }
 
         /* ═══════════════ End Configuration ═══════════════ */
