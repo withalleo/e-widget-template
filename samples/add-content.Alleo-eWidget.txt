@@ -48,33 +48,72 @@
 <button id="add-html">Add HTML embed</button>
 
 <script>
-    document.getElementById('add-notepad').addEventListener('click', () => {
-        alleo.addContent({
+    'use strict'
+
+    /**
+     * Adds new objects (notepad, sticky note, HTML embed) to the board via
+     * alleo.addContent. Each button maps to one content template.
+     */
+    class AddContentWidget {
+        /* ═══════════════ Configuration ═══════════════ */
+
+        /** @type {{type: string, textFormat: string, text: string}} Notepad object template. */
+        notepadTemplate = {
             type: 'notepad',
             textFormat: 'markdown',
             text: '# New note\n\nAdded from iframe.',
-        })
-    })
+        }
 
-    document.getElementById('add-sticky').addEventListener('click', () => {
-        alleo.addContent({
+        /** @type {{type: string, text: string, color: string, outlineColor: string, shape: string}} Sticky-note template. */
+        stickyTemplate = {
             type: 'sticky-note',
             text: 'Remember to review the draft',
             color: '#FFE680',
             outlineColor: '#B38F00',
             shape: 'square',
-        })
-    })
+        }
 
-    document.getElementById('add-html').addEventListener('click', () => {
-        alleo.addContent({
+        /** @type {{type: string, html: string}} HTML-embed object template. */
+        htmlTemplate = {
             type: 'html',
             html: '<!doctype html><html><body><h2>Hello from iframe</h2></body></html>',
-        })
-    })
+        }
 
-    // Listeners attached — announce the widget is ready.
-    alleo.triggerAction('onloaded')
+        /* ═══════════════ End Configuration ═══════════════ */
+
+        /**
+         * @param {object} alleo The Alleo SDK messenger (the global `alleo`).
+         */
+        constructor(alleo) {
+            /** @type {object} Alleo SDK messenger. */
+            this.alleo = alleo
+        }
+
+        /**
+         * Wire each button to its content template, then announce readiness.
+         * @fires onloaded
+         */
+        init() {
+            document.getElementById('add-notepad').addEventListener('click', () => this.addContent(this.notepadTemplate))
+            document.getElementById('add-sticky').addEventListener('click', () => this.addContent(this.stickyTemplate))
+            document.getElementById('add-html').addEventListener('click', () => this.addContent(this.htmlTemplate))
+
+            // Listeners attached — announce the widget is ready.
+            this.alleo.triggerAction('onloaded')
+            console.log('AddContentWidget.init: ready')
+        }
+
+        /**
+         * Add a new object to the board.
+         * @param {object} params Parameters passed straight to alleo.addContent.
+         */
+        addContent(params) {
+            this.alleo.addContent(params)
+            console.log('AddContentWidget.addContent:', params.type)
+        }
+    }
+
+    new AddContentWidget(alleo).init()
 </script>
 </body>
 </html>

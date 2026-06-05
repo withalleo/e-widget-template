@@ -46,26 +46,69 @@
 <button id="color">Set random color</button>
 
 <script>
-    const button = document.getElementById('color')
+    'use strict'
 
-    const applyColor = (status) => {
-        if (!status || !status.color) return
-        button.style.backgroundColor = status.color
+    /**
+     * Stores a single shared color in synced status so every board viewer sees
+     * the same value. The synced status is the source of truth for the UI.
+     */
+    class SyncedColorWidget {
+        /* ═══════════════ Configuration ═══════════════ */
+
+        /** @type {string} Key under which the color is stored in synced status. */
+        statusKey = 'color'
+
+        /** @type {string} Fallback button color used before any status arrives. */
+        defaultColor = '#dddddd'
+
+        /* ═══════════════ End Configuration ═══════════════ */
+
+        /**
+         * @param {object} alleo The Alleo SDK messenger (the global `alleo`).
+         */
+        constructor(alleo) {
+            /** @type {object} Alleo SDK messenger. */
+            this.alleo = alleo
+            /** @type {HTMLButtonElement} Button whose background reflects the shared color. */
+            this.button = document.getElementById('color')
+        }
+
+        /**
+         * Subscribe to shared state, apply existing state, and announce readiness.
+         * @fires onloaded
+         */
+        init() {
+            this.alleo.onSyncedStatusUpdate((status) => this.applyStatus(status))
+            this.button.addEventListener('click', () => this.setRandomColor())
+
+            // Apply existing shared state before announcing readiness.
+            this.alleo.requestSyncedStatus()
+            this.alleo.triggerAction('onloaded')
+            console.log('SyncedColorWidget.init: ready')
+        }
+
+        /**
+         * Rebuild the UI from the received synced status.
+         * @param {Record<string, unknown>=} status Latest full shared state.
+         */
+        applyStatus(status) {
+            const color = status && status[this.statusKey] ? String(status[this.statusKey]) : this.defaultColor
+            this.button.style.backgroundColor = color
+            console.log('SyncedColorWidget.applyStatus:', color)
+        }
+
+        /**
+         * Pick a random color, update the shared state, and let the subscription
+         * redraw the button.
+         */
+        setRandomColor() {
+            const color = `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0')}`
+            this.alleo.setSyncedStatus({[this.statusKey]: color})
+            console.log('SyncedColorWidget.setRandomColor: wrote', color)
+        }
     }
 
-    alleo.onSyncedStatusUpdate((status) => {
-        applyColor(status)
-    })
-
-    button.addEventListener('click', () => {
-        const color = `#${Math.floor(Math.random() * 0xffffff)
-            .toString(16)
-            .padStart(6, '0')}`
-        alleo.setSyncedStatus({color})
-    })
-
-    alleo.requestSyncedStatus()
-    alleo.triggerAction('onloaded')
+    new SyncedColorWidget(alleo).init()
 </script>
 </body>
 </html>

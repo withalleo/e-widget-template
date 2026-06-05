@@ -101,55 +101,116 @@
 <pre id="log"></pre>
 
 <script>
-    const logEl = document.getElementById('log')
-    const log = (message, data) => {
-        const line = data !== undefined ? `${message} ${JSON.stringify(data)}` : message
-        logEl.textContent = `${line}\n${logEl.textContent}`
+    'use strict'
+
+    /**
+     * Reads and writes the text of a whitelisted board object: get / replace /
+     * append, plus a global error handler.
+     */
+    class BoardObjectContentWidget {
+        /* ═══════════════ Configuration ═══════════════ */
+
+        /** @type {number} Fallback whitelist index (1-based) when the input is empty/invalid. */
+        defaultIndex = 1
+
+        /** @type {number} Maximum number of lines kept in the on-screen log. */
+        maxLogLines = 200
+
+        /* ═══════════════ End Configuration ═══════════════ */
+
+        /**
+         * @param {object} alleo The Alleo SDK messenger (the global `alleo`).
+         */
+        constructor(alleo) {
+            /** @type {object} Alleo SDK messenger. */
+            this.alleo = alleo
+            /** @type {HTMLElement} On-screen log target. */
+            this.logEl = document.getElementById('log')
+            /** @type {HTMLInputElement} Whitelist index input (1-based). */
+            this.indexInput = document.getElementById('index')
+            /** @type {HTMLSelectElement} Content format selector. */
+            this.formatSelect = document.getElementById('format')
+            /** @type {HTMLTextAreaElement} Text used for replace/append and shown on get. */
+            this.textArea = document.getElementById('text')
+        }
+
+        /**
+         * Wire buttons, register the error handler, and announce readiness.
+         * @fires onloaded
+         */
+        init() {
+            document.getElementById('get').addEventListener('click', () => this.getContent())
+            document.getElementById('replace').addEventListener('click', () => this.replaceContent())
+            document.getElementById('append').addEventListener('click', () => this.appendContent())
+            this.alleo.onError(({index, error, requestId}) => this.handleError(index, error, requestId))
+
+            // Listeners attached — announce the widget is ready.
+            this.alleo.triggerAction('onloaded')
+            console.log('BoardObjectContentWidget.init: ready')
+        }
+
+        /** @returns {number} The selected whitelist index (1-based), or the default. */
+        get index() {
+            return Number(this.indexInput.value) || this.defaultIndex
+        }
+
+        /** @returns {string} The selected content format ('text' | 'markdown' | 'html'). */
+        get format() {
+            return this.formatSelect.value
+        }
+
+        /** Read the whitelisted object's text and show it in the textarea. */
+        async getContent() {
+            const {index, format} = this
+            this.log(`getBoardObjectContent(${index}, { format: '${format}' }) …`)
+            try {
+                const content = await this.alleo.getBoardObjectContent(index, {format})
+                this.log('Content received:', content)
+                this.textArea.value = content.join('\n')
+            } catch (err) {
+                this.log('Error: ' + err.message)
+                console.warn('BoardObjectContentWidget.getContent failed:', err)
+            }
+        }
+
+        /** Replace the whitelisted object's text with the textarea contents. */
+        replaceContent() {
+            const {index, format} = this
+            this.alleo.replaceBoardObjectContent(index, this.textArea.value, {format})
+            this.log(`replaceBoardObjectContent(${index}) sent`)
+        }
+
+        /** Append the textarea contents to the whitelisted object's text. */
+        appendContent() {
+            const {index, format} = this
+            this.alleo.appendBoardObjectContent(index, this.textArea.value, {format})
+            this.log(`appendBoardObjectContent(${index}) sent`)
+        }
+
+        /**
+         * Log a board-object error reported by the SDK.
+         * @param {number} index Whitelist index that failed.
+         * @param {string} error Error message.
+         * @param {string=} requestId Correlation id of the failed request.
+         */
+        handleError(index, error, requestId) {
+            this.log(`boardObjectContentError #${index} (requestId=${requestId}):`, error)
+            console.error('BoardObjectContentWidget.handleError:', index, error)
+        }
+
+        /**
+         * Prepend a line to the on-screen log, trimmed to {@link maxLogLines}.
+         * @param {string} message Text to log.
+         * @param {unknown=} data Optional value JSON-stringified after the message.
+         */
+        log(message, data) {
+            const line = data !== undefined ? `${message} ${JSON.stringify(data)}` : message
+            this.logEl.textContent = `${line}\n${this.logEl.textContent}`
+                .split('\n').slice(0, this.maxLogLines).join('\n')
+        }
     }
 
-    const getIndex = () => Number(document.getElementById('index').value) || 1
-    const getFormat = () => document.getElementById('format').value
-    const getText = () => document.getElementById('text').value
-
-    // --- Get board object content (async) ---
-    document.getElementById('get').addEventListener('click', async () => {
-        const index = getIndex()
-        const format = getFormat()
-        log(`getBoardObjectContent(${index}, { format: '${format}' }) …`)
-        try {
-            const content = await alleo.getBoardObjectContent(index, {format})
-            log('Content received:', content)
-            document.getElementById('text').value = content.join('\n')
-        } catch (err) {
-            log('Error: ' + err.message)
-        }
-    })
-
-    // --- Replace board object content ---
-    document.getElementById('replace').addEventListener('click', () => {
-        const index = getIndex()
-        const format = getFormat()
-        const text = getText()
-        alleo.replaceBoardObjectContent(index, text, {format})
-        log(`replaceBoardObjectContent(${index}) sent`)
-    })
-
-    // --- Append board object content ---
-    document.getElementById('append').addEventListener('click', () => {
-        const index = getIndex()
-        const format = getFormat()
-        const text = getText()
-        alleo.appendBoardObjectContent(index, text, {format})
-        log(`appendBoardObjectContent(${index}) sent`)
-    })
-
-    // --- Global error handler ---
-    const unsubscribe = alleo.onError(({index, error, requestId}) => {
-        log(`boardObjectContentError #${index} (requestId=${requestId}):`, error)
-    })
-
-    // Listeners attached — announce the widget is ready.
-    alleo.triggerAction('onloaded')
+    new BoardObjectContentWidget(alleo).init()
 </script>
 </body>
 </html>

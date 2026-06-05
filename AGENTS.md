@@ -15,14 +15,16 @@ GitHub Copilot, etc.) working in this repository.
    description of the widget the user wants.
 2. **Design and generate one self-contained Alleo E-widget** (a single HTML
    document) that fulfils that idea, following every rule in this file.
-3. **Write the result to the `dist/` directory as a `.txt` file** that contains
-   the full HTML. Use a short, kebab-case name derived from the widget's purpose,
-   e.g. `dist/countdown-timer.txt`. If you cannot derive a good name, use
-   `dist/widget.txt`.
-    - The file **must** have a `.txt` extension, not `.html`. The Alleo E-widget's file picker expects `.txt` for
-      uploaded HTML (see `docs/reference/HELP.md`).
+3. **Write the result to the `dist/` directory as a `.Alleo-eWidget.txt` file**
+   that contains the full HTML. Use a short, kebab-case name derived from the
+   widget's purpose, e.g. `dist/countdown-timer.Alleo-eWidget.txt`. If you cannot
+   derive a good name, use `dist/widget.Alleo-eWidget.txt`.
+    - The file **must** have a `.txt` extension, not `.html` (the recommended
+      suffix is `.Alleo-eWidget.txt`). The Alleo E-widget's file picker expects
+      `.txt` for uploaded HTML (see `docs/reference/HELP.md`).
     - The file content is a normal, complete HTML document.
-4. **Write a short build note** to `dist/<same-name>.README.md` summarising what
+4. **Write a short build note** to `dist/<same-name>.README.md` (the same
+   kebab-case base name, e.g. `dist/countdown-timer.README.md`) summarizing what
    you built, the assumptions you made, every outgoing/incoming action, the board
    features the user must enable, and the default widget size.
 

@@ -53,36 +53,107 @@
 <pre id="log"></pre>
 
 <script>
-    const logEl = document.getElementById('log')
-    const log = (message, data) => {
-        const line = data ? `${message} ${JSON.stringify(data)}` : message
-        logEl.textContent = `${line}\n${logEl.textContent}`
+    'use strict'
+
+    /**
+     * Minimal demo widget: fires an outgoing action, logs every incoming action,
+     * and reads the shared synced status.
+     */
+    class BasicActionsWidget {
+        /* ═══════════════ Configuration ═══════════════ */
+
+        /** @type {string} Outgoing action id fired when the trigger button is clicked. */
+        triggerActionId = 'demo'
+
+        /** @type {string} Name of the parameter carried by the {@link triggerActionId} action. */
+        triggerParamName = 'demo-param'
+
+        /** @type {string} Payload value sent with the demo action. */
+        triggerParamValue = 'Hello from iframe'
+
+        /** @type {number} Maximum number of lines kept in the on-screen log. */
+        maxLogLines = 200
+
+        /* ═══════════════ End Configuration ═══════════════ */
+
+        /**
+         * @param {object} alleo The Alleo SDK messenger (the global `alleo`).
+         */
+        constructor(alleo) {
+            /** @type {object} Alleo SDK messenger. */
+            this.alleo = alleo
+            /** @type {HTMLElement} On-screen log target. */
+            this.logEl = document.getElementById('log')
+            /** @type {HTMLButtonElement} Fires the outgoing demo action. */
+            this.triggerBtn = document.getElementById('trigger')
+            /** @type {HTMLButtonElement} Requests the current synced status. */
+            this.requestBtn = document.getElementById('request')
+        }
+
+        /**
+         * Wire up listeners, pull existing shared state, and announce readiness.
+         * @fires onloaded
+         */
+        init() {
+            this.alleo.onSyncedStatusUpdate((status) => this.handleSyncedStatus(status))
+            this.alleo.onIncomingAction(({actionId, data}) => this.handleIncomingAction(actionId, data))
+            this.triggerBtn.addEventListener('click', () => this.sendDemoAction())
+            this.requestBtn.addEventListener('click', () => this.requestStatus())
+
+            // Pull any existing shared state, then announce the widget is ready.
+            this.alleo.requestSyncedStatus()
+            this.alleo.triggerAction('onloaded')
+            this.log('onloaded sent')
+            console.log('BasicActionsWidget.init: ready')
+        }
+
+        /**
+         * Fire the outgoing demo action with its configured payload.
+         * @fires demo
+         */
+        sendDemoAction() {
+            this.alleo.triggerAction(this.triggerActionId, {[this.triggerParamName]: this.triggerParamValue})
+            this.log('triggerAction sent')
+            console.log('BasicActionsWidget.sendDemoAction: fired', this.triggerActionId)
+        }
+
+        /** Ask the board to resend the current synced status. */
+        requestStatus() {
+            this.alleo.requestSyncedStatus()
+            this.log('requestSyncedStatus sent')
+        }
+
+        /**
+         * Log a synced-status update.
+         * @param {Record<string, unknown>=} status Latest full shared state.
+         */
+        handleSyncedStatus(status) {
+            this.log('syncedStatusUpdate:', status)
+        }
+
+        /**
+         * Log an incoming action.
+         * @param {string} actionId Id of the incoming action.
+         * @param {Record<string, unknown>=} data Optional action payload.
+         */
+        handleIncomingAction(actionId, data) {
+            this.log(`incomingAction: ${actionId}`, data)
+            console.log('BasicActionsWidget.handleIncomingAction:', actionId, data)
+        }
+
+        /**
+         * Prepend a line to the on-screen log, trimmed to {@link maxLogLines}.
+         * @param {string} message Text to log.
+         * @param {unknown=} data Optional value JSON-stringified after the message.
+         */
+        log(message, data) {
+            const line = data !== undefined ? `${message} ${JSON.stringify(data)}` : message
+            this.logEl.textContent = `${line}\n${this.logEl.textContent}`
+                .split('\n').slice(0, this.maxLogLines).join('\n')
+        }
     }
 
-    alleo.onSyncedStatusUpdate((status) => {
-        log('syncedStatusUpdate:', status)
-    })
-
-    alleo.onIncomingAction(({actionId, data}) => {
-        log(`incomingAction: ${actionId}`, data)
-    })
-
-    document.getElementById('trigger').addEventListener('click', () => {
-        alleo.triggerAction('demo', {
-            'demo-param': 'Hello from iframe',
-        })
-        log('triggerAction sent')
-    })
-
-    document.getElementById('request').addEventListener('click', () => {
-        alleo.requestSyncedStatus()
-        log('requestSyncedStatus sent')
-    })
-
-    // Pull any existing shared state, then announce the widget is ready.
-    alleo.requestSyncedStatus()
-    alleo.triggerAction('onloaded')
-    log('onloaded sent')
+    new BasicActionsWidget(alleo).init()
 </script>
 </body>
 </html>
