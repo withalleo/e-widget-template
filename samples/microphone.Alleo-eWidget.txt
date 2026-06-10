@@ -34,9 +34,48 @@
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Alleo E-widget — Microphone</title>
+    <!-- ═══════════════ Configuration ═══════════════ -->
+    <script>
+        /** User-tunable values. Edit these to customize the widget. */
+        const settings = {
+            /** @type {number} FFT window size for the analyser (power of two). */
+            fftSize: 1024,
+            /** @type {string} Waveform stroke color (CSS color). */
+            waveColor: '#2c8',
+            /** @type {number} Waveform stroke width in pixels. */
+            waveLineWidth: 2,
+            /** @type {string} Canvas background color used when drawing (CSS color). */
+            canvasBackground: '#111',
+            /** @type {number} Default capture chunk size in ms (clamped to [min,max]Timeslice). */
+            defaultTimeslice: 100,
+            /** @type {number} Minimum capture chunk size in ms. */
+            minTimeslice: 20,
+            /** @type {number} Maximum capture chunk size in ms (hard SDK limit). */
+            maxTimeslice: 200,
+            /** @type {number} How often (ms) to log the input level (RMS). */
+            levelLogIntervalMs: 1000,
+            /** @type {number} Playback volume for the monitor element (0–1). */
+            monitorVolume: 1.0,
+            /** @type {number} Maximum number of lines kept in the on-screen log. */
+            maxLogLines: 300,
+            /** @type {string[]} <audio> events logged for debugging. */
+            monitorEvents: [
+                'loadedmetadata', 'play', 'playing', 'pause', 'waiting',
+                'stalled', 'suspend', 'emptied', 'ended', 'error', 'volumechange',
+            ],
+        }
+    </script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            --font-family: Arial, sans-serif; /* widget font */
+            --log-background: #f4f4f4;         /* log panel background (CSS color) */
+            --canvas-background: #111;         /* waveform canvas background (CSS color) */
+        }
+    </style>
+    <!-- ═════════════ END Configuration ═════════════ -->
+    <style>
+        body {
+            font-family: var(--font-family);
             padding: 16px;
             max-width: 720px;
         }
@@ -48,7 +87,7 @@
         }
 
         pre {
-            background: #f4f4f4;
+            background: var(--log-background);
             padding: 8px;
             max-height: 220px;
             overflow: auto;
@@ -67,7 +106,7 @@
         canvas {
             width: 100%;
             height: 80px;
-            background: #111;
+            background: var(--canvas-background);
             border-radius: 4px;
             display: block;
             margin: 12px 0;
@@ -117,40 +156,37 @@
         /* ═══════════════ Configuration ═══════════════ */
 
         /** @type {number} FFT window size for the analyser (power of two). */
-        fftSize = 1024
+        fftSize = settings.fftSize
 
         /** @type {string} Waveform stroke color. */
-        waveColor = '#2c8'
+        waveColor = settings.waveColor
 
         /** @type {number} Waveform stroke width in pixels. */
-        waveLineWidth = 2
+        waveLineWidth = settings.waveLineWidth
 
         /** @type {string} Canvas background color. */
-        canvasBackground = '#111'
+        canvasBackground = settings.canvasBackground
 
         /** @type {number} Default capture chunk size in ms (clamped to [min,max]Timeslice). */
-        defaultTimeslice = 100
+        defaultTimeslice = settings.defaultTimeslice
 
         /** @type {number} Minimum capture chunk size in ms. */
-        minTimeslice = 20
+        minTimeslice = settings.minTimeslice
 
         /** @type {number} Maximum capture chunk size in ms (hard SDK limit). */
-        maxTimeslice = 200
+        maxTimeslice = settings.maxTimeslice
 
         /** @type {number} How often (ms) to log the input level (RMS). */
-        levelLogIntervalMs = 1000
+        levelLogIntervalMs = settings.levelLogIntervalMs
 
         /** @type {number} Playback volume for the monitor element (0–1). */
-        monitorVolume = 1.0
+        monitorVolume = settings.monitorVolume
 
         /** @type {number} Maximum number of lines kept in the on-screen log. */
-        maxLogLines = 300
+        maxLogLines = settings.maxLogLines
 
         /** @type {string[]} <audio> events logged for debugging. */
-        monitorEvents = [
-            'loadedmetadata', 'play', 'playing', 'pause', 'waiting',
-            'stalled', 'suspend', 'emptied', 'ended', 'error', 'volumechange',
-        ]
+        monitorEvents = settings.monitorEvents
 
         /* ═══════════════ End Configuration ═══════════════ */
 

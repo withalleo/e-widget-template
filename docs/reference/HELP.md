@@ -76,10 +76,10 @@ If your markup uses JavaScript, enable **Allow scripts** under **Security**.
 | Setting                                    | Description                                                                                                                                                                                                |
 |--------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Allow content access to the microphone** | Grants microphone permission to the embedded content. Custom HTML widgets can also reach the mic through the `alleo.mic` SDK bridge, which streams audio from the parent widget into the sandboxed iframe. |
-| **Allow content access to the camera**     | Grants camera permission to the embedded content.                                                                                                                                                          |
 
-These options may be hidden when your organisation enforces strict security. Browser-level permission prompts still
-apply.
+> Camera access is **no longer available** to embedded content. This option may be
+> hidden when your organisation enforces strict security. Browser-level permission
+> prompts still apply.
 
 ### Security
 
@@ -122,8 +122,8 @@ Permissions-Policy: camera=(), microphone=()
 ```
 
 - Replace the origin with your deployment if different.
-- To grant camera or microphone access, adjust `Permissions-Policy` (e.g. `microphone=(self)`) **and** enable the
-  matching widget toggle.
+- To grant microphone access, adjust `Permissions-Policy` (e.g. `microphone=(self)`) **and** enable the
+  matching widget toggle. (Camera access is no longer available to embedded content.)
 - `Access-Control-Allow-Origin` accepts a single origin or `*`. For multiple deployments, echo the request `Origin`
   after validating it against an allowlist.
 - These headers must come from **your** server. If a third-party site blocks framing, the widget cannot override it.
@@ -150,7 +150,7 @@ with the board via the `alleo` object.
 
 <script src="https://unpkg.com/@withalleo/ewidget-utils/dist/ewidget-utils.umd.cjs"></script>
 <script>
-    const alleo = AlleoEWidget.getEmbedWidgetMessenger()
+    const alleo = AlleoEWidget.getEmbedWidgetMessenger({debug: false})
 </script>
 ```
 
@@ -160,7 +160,7 @@ with the board via the `alleo` object.
 |----------------------------------|-----------------------------------------------------------------------------------------------------------|
 | Trigger board actions (outgoing) | Board features                                                                                            |
 | Receive incoming actions         | Board features                                                                                            |
-| Add content to the board         | Board features + **Enable adding new content**                                                            |
+| Add content to the board         | Board features + **Enable adding new content to the board**                                               |
 | Synced status                    | Board features + **Enable synchronizing status**                                                          |
 | Read/write board object content  | Board features + **Enable reading/writing board object content** + populate **Whitelisted board objects** |
 
@@ -261,7 +261,7 @@ Register early to catch issues from any board-object operation.
 | Embed is blank                      | Verify the URL starts with `https://`. Enable **Allow scripts** if the page requires JS. Check that **Unload when off-screen** isn't hiding content. The target site may block framing via `X-Frame-Options` or `frame-ancestors` |
 | Content reloads on scroll           | Expected when **Unload when off-screen** is enabled. Disable it to keep content persistent (higher resource usage).                                                                                                               |
 | Cannot click or scroll inside embed | Disable **Disable all user interactions with the content** and/or **Disable scrolling the content** under **Display**.                                                                                                            |
-| Camera/microphone unavailable       | Enable the permission under **Media permissions**, accept any browser prompts, and check whether your organisation's policy hides or locks these options. Sandbox restrictions may still apply.                                   |
+| Microphone unavailable              | Enable **Allow content access to the microphone** under **Media permissions**, accept any browser prompts, and check whether your organisation's policy hides or locks the option. Sandbox restrictions may still apply. (Camera access is no longer available.)                   |
 | HTML file won't upload              | Rename the file to `.txt` and upload the renamed copy.                                                                                                                                                                            |
 
 ---

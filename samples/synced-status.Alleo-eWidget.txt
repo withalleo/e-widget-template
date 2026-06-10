@@ -25,16 +25,33 @@
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Alleo E-widget — Synced status</title>
+    <!-- ═══════════════ Configuration ═══════════════ -->
+    <script>
+        /** User-tunable values. Edit these to customize the widget. */
+        const settings = {
+            /** @type {string} Key under which the color is stored in synced status. */
+            statusKey: 'color',
+            /** @type {string} Fallback button color used before any status arrives. */
+            defaultColor: '#dddddd',
+        }
+    </script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            --font-family: Arial, sans-serif; /* widget font */
+            --button-text-color: #111;         /* button label color (CSS color) */
+        }
+    </style>
+    <!-- ═════════════ END Configuration ═════════════ -->
+    <style>
+        body {
+            font-family: var(--font-family);
             padding: 16px;
         }
 
         button {
             padding: 8px 12px;
             border: none;
-            color: #111;
+            color: var(--button-text-color);
         }
     </style>
 </head>
@@ -56,10 +73,10 @@
         /* ═══════════════ Configuration ═══════════════ */
 
         /** @type {string} Key under which the color is stored in synced status. */
-        statusKey = 'color'
+        statusKey = settings.statusKey
 
         /** @type {string} Fallback button color used before any status arrives. */
-        defaultColor = '#dddddd'
+        defaultColor = settings.defaultColor
 
         /* ═══════════════ End Configuration ═══════════════ */
 

@@ -10,7 +10,7 @@ A JavaScript library that can be used within an Alleo e-widget to provide additi
 
 ## Insert library
 
-To use the library, you have to insert the `<EWidgetSDK>` tag in the beginning of your code (it doesn't have a closing
+To use the library, you have to insert the `<EWidgetSDK />` tag in the beginning of your code (it doesn't have a closing
 tag). This defines the `alleo` class.
 
 ```html
@@ -23,14 +23,14 @@ tag). This defines the `alleo` class.
 </script>
 ```
 
-Alternatively when using an url (not recommended) instead of the `<EWidgetSDK>` tag, you have to link the library
+Alternatively when using an url (not recommended) instead of the `<EWidgetSDK />` tag, you have to link the library
 directly.
 
 ```html
 
 <script src="https://unpkg.com/@withalleo/ewidget-utils/dist/ewidget-utils.umd.cjs"></script>
 <script>
-    const alleo = AlleoEWidget.getEmbedWidgetMessenger({debug: true})
+    const alleo = AlleoEWidget.getEmbedWidgetMessenger({debug: false})
 </script>
 ```
 
@@ -60,7 +60,7 @@ alleo.triggerAction('demo', {
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Alleo E-widget — Basic actions</title>
+    <title>Alleo E-widget â€” Basic actions</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -78,8 +78,8 @@ alleo.triggerAction('demo', {
     </style>
 </head>
 <body>
-<EWidgetSDK>
-    <h1>Alleo E-widget — Basic actions</h1>
+<EWidgetSDK/>
+    <h1>Alleo E-widget â€” Basic actions</h1>
     <p>This page is intended to run inside the E-widget iframe.</p>
 
     <button id="trigger">Trigger action</button>
@@ -156,7 +156,7 @@ Union of the following shapes:
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Alleo E-widget — Add content</title>
+    <title>Alleo E-widget â€” Add content</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -171,8 +171,8 @@ Union of the following shapes:
     </style>
 </head>
 <body>
-<EWidgetSDK>
-    <h1>Alleo E-widget — Add content</h1>
+<EWidgetSDK/>
+    <h1>Alleo E-widget â€” Add content</h1>
     <p>These commands require "Enable adding new content to the board" in settings.</p>
 
     <button id="add-notepad">Add notepad</button>
@@ -252,7 +252,7 @@ alleo.setSyncedStatus({
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Alleo E-widget — Synced status</title>
+    <title>Alleo E-widget â€” Synced status</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -267,8 +267,8 @@ alleo.setSyncedStatus({
     </style>
 </head>
 <body>
-<EWidgetSDK>
-    <h1>Alleo E-widget — Synced status</h1>
+<EWidgetSDK/>
+    <h1>Alleo E-widget â€” Synced status</h1>
     <p>Click the button to set a random color in synced status.</p>
 
     <button id="color">Set random color</button>
@@ -366,7 +366,7 @@ console.log(content.join('\n'))
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Alleo E-widget — Board object content</title>
+    <title>Alleo E-widget â€” Board object content</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -408,10 +408,10 @@ console.log(content.join('\n'))
     </style>
 </head>
 <body>
-<EWidgetSDK>
-    <h1>Board Object Content</h1>
+<EWidgetSDK/>
+    <h1>Alleo E-widget â€” Board object content</h1>
     <p>
-        These commands require <strong>Enable board object content functions</strong>
+        These commands require <strong>Enable reading/writing board object content</strong>
         and at least one whitelisted board object in settings.
     </p>
 
@@ -564,7 +564,7 @@ namespace delegates capture to the parent Alleo widget over `postMessage`. The p
 stream into short audio chunks (**maximum 200 ms per chunk**) and forwards them back to the iframe, where the library
 reassembles them into a live `MediaStream` you can use just like a normal `getUserMedia` result.
 
-Requires **Enable microphone access** in the widget settings. The first call to `alleo.mic.start()` triggers a browser
+Requires **Allow content access to the microphone** in the widget settings. The first call to `alleo.mic.start()` triggers a browser
 permission prompt on the parent page.
 
 ### `mic.start`
@@ -645,10 +645,10 @@ Each returns an unsubscribe function.
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <title>Alleo E-widget — Microphone</title>
+    <title>Alleo E-widget â€” Microphone</title>
 </head>
 <body>
-<EWidgetSDK>
+<EWidgetSDK/>
     <button id="start">Start mic</button>
     <button id="stop">Stop mic</button>
     <audio id="monitor" controls></audio>

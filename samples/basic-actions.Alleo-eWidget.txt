@@ -25,9 +25,30 @@
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Alleo E-widget — Basic actions</title>
+    <!-- ═══════════════ Configuration ═══════════════ -->
+    <script>
+        /** User-tunable values. Edit these to customize the widget. */
+        const settings = {
+            /** @type {string} Outgoing action id fired when the trigger button is clicked. */
+            triggerActionId: 'demo',
+            /** @type {string} Name of the parameter carried by the trigger action. */
+            triggerParamName: 'demo-param',
+            /** @type {string} Payload value sent with the demo action. */
+            triggerParamValue: 'Hello from iframe',
+            /** @type {number} Maximum number of lines kept in the on-screen log. */
+            maxLogLines: 200,
+        }
+    </script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            --font-family: Arial, sans-serif; /* widget font */
+            --log-background: #f4f4f4;         /* log panel background (CSS color) */
+        }
+    </style>
+    <!-- ═════════════ END Configuration ═════════════ -->
+    <style>
+        body {
+            font-family: var(--font-family);
             padding: 16px;
         }
 
@@ -36,7 +57,7 @@
         }
 
         pre {
-            background: #f4f4f4;
+            background: var(--log-background);
             padding: 8px;
         }
     </style>
@@ -63,16 +84,16 @@
         /* ═══════════════ Configuration ═══════════════ */
 
         /** @type {string} Outgoing action id fired when the trigger button is clicked. */
-        triggerActionId = 'demo'
+        triggerActionId = settings.triggerActionId
 
         /** @type {string} Name of the parameter carried by the {@link triggerActionId} action. */
-        triggerParamName = 'demo-param'
+        triggerParamName = settings.triggerParamName
 
         /** @type {string} Payload value sent with the demo action. */
-        triggerParamValue = 'Hello from iframe'
+        triggerParamValue = settings.triggerParamValue
 
         /** @type {number} Maximum number of lines kept in the on-screen log. */
-        maxLogLines = 200
+        maxLogLines = settings.maxLogLines
 
         /* ═══════════════ End Configuration ═══════════════ */
 

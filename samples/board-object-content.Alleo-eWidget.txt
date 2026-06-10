@@ -27,9 +27,26 @@
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Alleo E-widget — Board object content</title>
+    <!-- ═══════════════ Configuration ═══════════════ -->
+    <script>
+        /** User-tunable values. Edit these to customize the widget. */
+        const settings = {
+            /** @type {number} Fallback whitelist index (1-based) when the input is empty/invalid. */
+            defaultIndex: 1,
+            /** @type {number} Maximum number of lines kept in the on-screen log. */
+            maxLogLines: 200,
+        }
+    </script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            --font-family: Arial, sans-serif; /* widget font */
+            --log-background: #f4f4f4;         /* log panel background (CSS color) */
+        }
+    </style>
+    <!-- ═════════════ END Configuration ═════════════ -->
+    <style>
+        body {
+            font-family: var(--font-family);
             padding: 16px;
         }
 
@@ -51,7 +68,7 @@
         }
 
         pre {
-            background: #f4f4f4;
+            background: var(--log-background);
             padding: 8px;
             max-height: 200px;
             overflow: auto;
@@ -111,10 +128,10 @@
         /* ═══════════════ Configuration ═══════════════ */
 
         /** @type {number} Fallback whitelist index (1-based) when the input is empty/invalid. */
-        defaultIndex = 1
+        defaultIndex = settings.defaultIndex
 
         /** @type {number} Maximum number of lines kept in the on-screen log. */
-        maxLogLines = 200
+        maxLogLines = settings.maxLogLines
 
         /* ═══════════════ End Configuration ═══════════════ */
 

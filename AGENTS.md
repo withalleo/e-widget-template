@@ -100,8 +100,8 @@ Always produce the `dist/<name>.README.md` build note with:
 - Prefer a dark background (e.g. `#051825`) with light text (e.g. `#f9fff6`).
 - Prefer the default sans-serif font.
 - Use `#6da8ff` (blue) as the default primary color.
-- Expose the main colors (background, text, primary) in the configuration block
-  so they are easy to customize.
+- Expose the main colors (background, text, primary) in the top-of-document
+  configuration section (see below) so they are easy to customize.
 
 ---
 
@@ -119,26 +119,60 @@ top-level functions or unstructured procedural code.
 
 ### Configuration section
 
-Every class begins with a clearly marked configuration block grouping all
-tunable values, before the constructor.
+Group **all** tunable values in one clearly marked configuration section at the
+top of the HTML `<head>`, before any other style or logic. Keep it as the single
+place a user edits to customize the widget — separate from the widget logic.
+
+- Mark it with HTML comments:
+  `<!-- ═══════════════ Configuration ═══════════════ -->` …
+  `<!-- ═════════════ END Configuration ═════════════ -->`
+- Put **JS-tunable values** (labels, text, timing, endpoints, thresholds, toggle
+  flags) in a `settings` object inside a `<script>`.
+- Put **theme values** (colors, fonts, sizes) in CSS custom properties on `body`
+  inside a `<style>`; reference them with `var(--…)` in the rest of the CSS.
+- Candidates: colors, labels, text, sizes, timing intervals, endpoints,
+  thresholds, toggle flags.
+
+```html
+<head>
+    <!-- ...meta/title... -->
+    <!-- ═══════════════ Configuration ═══════════════ -->
+    <script>
+        /** User-tunable values. Edit these to customize the widget. */
+        const settings = {
+            /** @type {string} Text label shown on the primary action button. */
+            buttonLabel: 'Submit',
+            /** @type {number} Debounce interval in milliseconds for rapid clicks. */
+            debounceMs: 300,
+        }
+    </script>
+    <style>
+        body {
+            --primary-color: #6da8ff;   /* primary accent (CSS color) */
+            --background-color: #051825; /* widget background (CSS color) */
+            --text-color: #f9fff6;       /* main text color (CSS color) */
+        }
+    </style>
+    <!-- ═════════════ END Configuration ═════════════ -->
+</head>
+```
+
+The main class still keeps a short in-class config block, but it **reads from
+`settings`** (and the CSS variables) rather than hard-coding values — so the
+top-of-document section stays the single source of truth.
 
 - Mark it: `/* ═══════════════ Configuration ═══════════════ */`
 - Each value gets a JSDoc comment with purpose, type, and constraints.
-- Candidates: colors, labels, text, sizes, timing intervals, endpoints,
-  thresholds, toggle flags.
 
 ```js
 class ExampleWidget {
     /* ═══════════════ Configuration ═══════════════ */
 
-    /** @type {string} Background color of the primary action button (CSS color). */
-    buttonColor = '#6da8ff'
-
     /** @type {string} Text label shown on the primary action button. */
-    buttonLabel = 'Submit'
+    buttonLabel = settings.buttonLabel
 
     /** @type {number} Debounce interval in milliseconds for rapid clicks. */
-    debounceMs = 300
+    debounceMs = settings.debounceMs
 
     /* ═══════════════ End Configuration ═══════════════ */
 }
@@ -436,7 +470,7 @@ complete HTML document plus a matching footer.
 - [ ] `alleo.onError` registered if any board-object operations are used.
 - [ ] If using mic: `onTrack` registered before `start()`, `onError` handled, `stop()` called when done, and a ⚠ warning
   added to the summary.
-- [ ] Valid plain ES2020+ only; class-based; config block at top with JSDoc; every member documented.
+- [ ] Valid plain ES2020+ only; class-based; tunables grouped in a top-of-document `<head>` configuration section (`settings` object + CSS variables) that the class reads from, with JSDoc; every member documented.
 - [ ] Importable `WIDGETSETTINGS:` footer appended as the **last** content, after `</html>`; valid JSON, only allowed
   keys, **all required keys present and explicitly set** (unused features `false` / `[]` / empty), feature flags and
   action ids/params match the HTML, `onloaded` not listed.

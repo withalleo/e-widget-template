@@ -25,9 +25,40 @@
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Alleo E-widget — Add content</title>
+    <!-- ═══════════════ Configuration ═══════════════ -->
+    <script>
+        /** User-tunable values. Edit these to customize the widget. */
+        const settings = {
+            /** @type {{type: string, textFormat: string, text: string}} Notepad object template. */
+            notepadTemplate: {
+                type: 'notepad',
+                textFormat: 'markdown',
+                text: '# New note\n\nAdded from iframe.',
+            },
+            /** @type {{type: string, text: string, color: string, outlineColor: string, shape: string}} Sticky-note template. */
+            stickyTemplate: {
+                type: 'sticky-note',
+                text: 'Remember to review the draft',
+                color: '#FFE680',
+                outlineColor: '#B38F00',
+                shape: 'square',
+            },
+            /** @type {{type: string, html: string}} HTML-embed object template. */
+            htmlTemplate: {
+                type: 'html',
+                html: '<!doctype html><html><body style="background-color: black; color: white;"><h2>Hello from iframe</h2></body></html>',
+            },
+        }
+    </script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            --font-family: Arial, sans-serif; /* widget font */
+        }
+    </style>
+    <!-- ═════════════ END Configuration ═════════════ -->
+    <style>
+        body {
+            font-family: var(--font-family);
             padding: 16px;
         }
 
@@ -58,26 +89,13 @@
         /* ═══════════════ Configuration ═══════════════ */
 
         /** @type {{type: string, textFormat: string, text: string}} Notepad object template. */
-        notepadTemplate = {
-            type: 'notepad',
-            textFormat: 'markdown',
-            text: '# New note\n\nAdded from iframe.',
-        }
+        notepadTemplate = settings.notepadTemplate
 
         /** @type {{type: string, text: string, color: string, outlineColor: string, shape: string}} Sticky-note template. */
-        stickyTemplate = {
-            type: 'sticky-note',
-            text: 'Remember to review the draft',
-            color: '#FFE680',
-            outlineColor: '#B38F00',
-            shape: 'square',
-        }
+        stickyTemplate = settings.stickyTemplate
 
         /** @type {{type: string, html: string}} HTML-embed object template. */
-        htmlTemplate = {
-            type: 'html',
-            html: '<!doctype html><html><body style="background-color: black; color: white;"><h2>Hello from iframe</h2></body></html>',
-        }
+        htmlTemplate = settings.htmlTemplate
 
         /* ═══════════════ End Configuration ═══════════════ */
 
