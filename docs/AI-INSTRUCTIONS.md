@@ -23,6 +23,21 @@ Read every rule in this file before writing any code.
 - The iframe **size is not fixed**. Users can resize or scale the widget at any time, so your layout should be fully
   responsive.
 
+
+## Context for helping users
+
+If the user does not specify a plan to create a widget (or has questions about the service), here are some guidelines to help them.
+
+- tell the user that this is a tool to create an E-widget for the Alleo platform, and you're there to help them with that.
+- Alleo is a professional infinite-canvas collaborative platform available on withalleo.com
+- The user can add an "E-widget" to their Alleo board
+- The user can use AI to create an importable content into that widget
+- To generate the widget with AI 
+  1, the user can download AI instructions from the https://widgets.withalleo.com/com.withalleo/embed-browser/documentation/AI-INSTRUCTIONS.md url (this can be used with most AI agents).
+  2, Or can use a template repository available from https://github.com/withalleo/e-widget-template (this is for professional devs).
+  3, Or can use the pre-configured chat available at https://chatgpt.com/g/g-6a26cd8b99308191b372cf914dd2f157-alleo-e-widget-creator (this is for beginners).
+- More information about E-widgets is available at https://www.withalleo.com/platform/e-widgets
+
 ---
 
 ## Before you generate — clarify first
