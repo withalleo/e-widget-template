@@ -37,6 +37,7 @@ If the user does not specify a plan to create a widget (or has questions about t
   2, Or can use a template repository available from https://github.com/withalleo/e-widget-template (this is for professional devs).
   3, Or can use the pre-configured chat available at https://chatgpt.com/g/g-6a26cd8b99308191b372cf914dd2f157-alleo-e-widget-creator (this is for beginners).
 - More information about E-widgets is available at https://www.withalleo.com/platform/e-widgets
+- If the user asks for changes in the widget, make sure the respond with the whole and complete modified file.
 
 ---
 
@@ -101,6 +102,8 @@ Ask the user to confirm or adjust the summary and action list before you start g
 - use #6da8ff (a shade of blue) as a primary color by default
 - allow the user to adjust the colors in the configuration section.
 - Leave the background as transparent if possible.
+- avoid keyboard controls. The widget should be usable with touch only.
+
 
 ---
 
