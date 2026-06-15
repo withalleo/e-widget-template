@@ -23,19 +23,24 @@ Read every rule in this file before writing any code.
 - The iframe **size is not fixed**. Users can resize or scale the widget at any time, so your layout should be fully
   responsive.
 
-
 ## Context for helping users
 
-If the user does not specify a plan to create a widget (or has questions about the service), here are some guidelines to help them.
+If the user does not specify a plan to create a widget (or has questions about the service), here are some guidelines to
+help them.
 
-- tell the user that this is a tool to create an E-widget for the Alleo platform, and you're there to help them with that.
+- tell the user that this is a tool to create an E-widget for the Alleo platform, and you're there to help them with
+  that.
 - Alleo is a professional infinite-canvas collaborative platform available on withalleo.com
 - The user can add an "E-widget" to their Alleo board
 - The user can use AI to create an importable content into that widget
-- To generate the widget with AI 
-  1, the user can download AI instructions from the https://widgets.withalleo.com/com.withalleo/embed-browser/documentation/AI-INSTRUCTIONS.md url (this can be used with most AI agents).
-  2, Or can use a template repository available from https://github.com/withalleo/e-widget-template (this is for professional devs).
-  3, Or can use the pre-configured chat available at https://chatgpt.com/g/g-6a26cd8b99308191b372cf914dd2f157-alleo-e-widget-creator (this is for beginners).
+- To generate the widget with AI
+  1, the user can download AI instructions from
+  the https://widgets.withalleo.com/com.withalleo/embed-browser/documentation/AI-INSTRUCTIONS.md url (this can be used
+  with most AI agents).
+  2, Or can use a template repository available from https://github.com/withalleo/e-widget-template (this is for
+  professional devs).
+  3, Or can use the pre-configured chat available
+  at https://chatgpt.com/g/g-6a26cd8b99308191b372cf914dd2f157-alleo-e-widget-creator (this is for beginners).
 - More information about E-widgets is available at https://www.withalleo.com/platform/e-widgets
 - If the user asks for changes in the widget, make sure the respond with the whole and complete modified file.
 
@@ -64,7 +69,7 @@ After the user has answered, and **before writing any code**, present:
    view — no implementation details, no code.
 2. **A proposed action list** in this format:
 
-   **Outgoing actions** (fired on user interaction):
+   **Outgoing triggers** (fired on user interaction):
     - `onloaded` — **always first; always present.** Fires once after the widget has fully initialised (no parameters).
     - `action-id` — brief description of when it fires and what data it carries
 
@@ -74,7 +79,7 @@ After the user has answered, and **before writing any code**, present:
    **Board object content** (read/write operations on whitelisted objects):
     - Whitelist index N — read / replace / append — a brief description of what the widget does with this object
 
-   The `onloaded` outgoing action is **mandatory** for every widget, do not omit it.
+   The `onloaded` outgoing trigger is **mandatory** for every widget, do not omit it.
    If no other actions or board object operations are needed, state that explicitly.
 
 Ask the user to confirm or adjust the summary and action list before you start generating the HTML.
@@ -103,7 +108,6 @@ Ask the user to confirm or adjust the summary and action list before you start g
 - allow the user to adjust the colors in the configuration section.
 - Leave the background as transparent if possible.
 - avoid keyboard controls. The widget should be usable with touch only.
-
 
 ---
 
@@ -138,6 +142,7 @@ tunables separate from the widget logic.
 Example:
 
 ```html
+
 <head>
     <!-- ...meta/title... -->
     <!-- ═══════════════ Configuration ═══════════════ -->
@@ -151,9 +156,9 @@ Example:
     </script>
     <style>
         body {
-            --primary-color: #6da8ff;    /* primary accent (CSS color) */
+            --primary-color: #6da8ff; /* primary accent (CSS color) */
             --background-color: #051825; /* widget background (CSS color) */
-            --text-color: #f9fff6;       /* main text color (CSS color) */
+            --text-color: #f9fff6; /* main text color (CSS color) */
         }
     </style>
     <!-- ═════════════ END Configuration ═════════════ -->
@@ -171,7 +176,7 @@ class ExampleWidget {
     /* ═══════════════ Configuration ═══════════════ */
 
     /** @type {string} Text label shown on the primary action button. */
-    buttonLabel = settings.buttonLabel ?? "Submit"
+    buttonLabel = settings.buttonLabel ?? 'Submit'
 
     /** @type {number} Debounce interval in milliseconds for rapid clicks. */
     debounceMs = settings.debounceMs ?? 200
@@ -179,7 +184,6 @@ class ExampleWidget {
     /* ═══════════════ End Configuration ═══════════════ */
 
     // your code here...
-
 }
 ```
 
@@ -317,7 +321,7 @@ Access the SDK as the global `alleo` symbol exactly as shown in the examples. Do
 
 #### `alleo.triggerAction(actionId, data?)`
 
-Fires an outgoing action to the Alleo board. Wire user interactions to this.
+Fires an outgoing trigger to the Alleo board. Wire user interactions to this.
 
 ```js
 /**
@@ -327,7 +331,7 @@ Fires an outgoing action to the Alleo board. Wire user interactions to this.
 alleo.triggerAction(actionId, data)
 ```
 
-- `actionId` must match an ID configured in the widget's **Enabled outgoing actions** settings.
+- `actionId` must match an ID configured in the widget's **Enabled outgoing triggers** settings.
 - `data` is an optional key/value map of output parameters.
 
 #### `alleo.onIncomingAction(handler)`
@@ -536,7 +540,7 @@ Every widget **must** fire `alleo.triggerAction('onloaded')` exactly once, after
 loaded. (The dom loaded, the listeners are set up, `alleo.requestSyncedStatus()` is called, all initial data fetch is
 completed.)
 
-#### Outgoing actions — trigger on every user interaction
+#### Outgoing triggers — trigger on every user interaction
 
 Fire `alleo.triggerAction` for **every meaningful user interaction**:
 
@@ -617,7 +621,7 @@ alleo.requestSyncedStatus()
 
 | Capability               | Settings to enable                                                                                                                    |
 |--------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| Outgoing actions         | **Enable Alleo board features for enclosed content**                                                                                  |
+| Outgoing triggers        | **Enable Alleo board features for enclosed content**                                                                                  |
 | Incoming actions         | **Enable Alleo board features for enclosed content**                                                                                  |
 | Add content to board     | **Enable Alleo board features** + **Enable adding new content to the board**                                                          |
 | Synced status            | **Enable Alleo board features** + **Enable synchronizing status**                                                                     |
@@ -628,7 +632,7 @@ alleo.requestSyncedStatus()
 
 ### Example
 
-A button that triggers an outgoing action and keeps its color in sync across all board instances:
+A button that triggers an outgoing trigger and keeps its color in sync across all board instances:
 
 ```html
 <!--
@@ -650,14 +654,14 @@ A button that triggers an outgoing action and keeps its color in sync across all
     <!-- ═══════════════ Configuration ═══════════════ -->
     <script>
         const settings = {
-            'buttonLabel': "Submit"
+            'buttonLabel': 'Submit',
         }
     </script>
     <style>
         body {
             --button-color: #4f86f7;
             --button-text-color: #fff;
-            --font-family: "PT Root UI", sans-serif;
+            --font-family: 'PT Root UI', sans-serif;
         }
     </style>
     <!-- ═════════════ END Configuration ═════════════ -->
@@ -688,7 +692,7 @@ A button that triggers an outgoing action and keeps its color in sync across all
 
 <script>
     /**
-     * SubmitButtonWidget — a minimal widget that fires an outgoing action
+     * SubmitButtonWidget — a minimal widget that fires an outgoing trigger
      * on click, accepts an incoming reset command, and synchronises its
      * last-clicked timestamp across all board instances.
      */
@@ -696,9 +700,9 @@ A button that triggers an outgoing action and keeps its color in sync across all
         /* ═══════════════ Configuration ═══════════════ */
 
         /** @type {string} Default label shown on the button. */
-        defaultLabel = settings.buttonLabel || "Submit"
+        defaultLabel = settings.buttonLabel || 'Submit'
 
-        /** @type {string} Outgoing action ID fired when the button is clicked. */
+        /** @type {string} Outgoing trigger ID fired when the button is clicked. */
         submitActionId = 'submit'
 
         /** @type {string} Incoming action ID that resets the button to its default label. */
@@ -981,12 +985,12 @@ If a capability is not used, omit its flag.
 - [ ] No links or navigations that open outside the iframe.
 - [ ] None of the blocked APIs (cookies, localStorage, alert, etc.) are used.
 - [ ] Layout is fully responsive and does not rely on a fixed iframe size.
-- [ ] Outgoing actions are called via `alleo.triggerAction` on user interactions.
+- [ ] Outgoing triggers are called via `alleo.triggerAction` on user interactions.
 - [ ] Incoming actions are handled via `alleo.onIncomingAction`.
 - [ ] `alleo.requestSyncedStatus()` is called on startup if synced state is used.
 - [ ] `alleo.onError` is registered if any board object content operations are used.
 - [ ] Board object content calls use 1-based whitelist indices, not raw object IDs.
-- [ ] `onloaded` outgoing action is fired exactly once after full initialization.
+- [ ] `onloaded` outgoing trigger is fired exactly once after full initialization.
 - [ ] All JavaScript is syntactically valid, plain ES2020+ — no TypeScript, no JSX, no non-standard syntax.
 - [ ] Widget logic is organized into classes with descriptive names — no loose top-level functions or unstructured
   procedural code.
