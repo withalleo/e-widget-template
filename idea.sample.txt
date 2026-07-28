@@ -1,0 +1,90 @@
+# ─────────────────────────────────────────────────────────────
+# SAMPLE idea.txt
+#
+# This is an EXAMPLE of how to describe the widget you want. Copy the
+# parts you like into idea.txt and edit freely. Everything here is
+# optional — if you leave a section out, the agent picks a sensible
+# default and records the decision in the build note.
+#
+# Lines starting with "#" are just comments for you; you can delete them.
+# Write in plain language. You do not need to know how Alleo works.
+# ─────────────────────────────────────────────────────────────
+
+
+## What I want to build (one or two sentences)
+
+A live team poll. People on the board tap one of several answer options and
+see the vote tally update in real time as a bar chart.
+
+
+## Who uses it and why
+
+Workshop facilitators and their participants. During a meeting the facilitator
+asks a question, everyone votes from their own device, and the group watches
+the results fill in live.
+
+
+## Main features / how it should behave
+
+- Show a question at the top and 2–6 answer options as big, tappable buttons.
+- Each tap adds one vote to that option and updates a horizontal bar chart with
+  counts and percentages.
+- One vote per person; tapping a different option moves that person's vote.
+- Everyone viewing the board sees the same numbers at the same time.
+
+
+## Look and feel
+
+- Dark background, light text, one accent color for the bars and buttons.
+- Minimal and flat — no heavy borders or shadows.
+- Big touch targets; it will be used on tablets and touchscreens.
+- Let board editors change the background, accent, and text colors.
+
+
+## Collaboration and saved state
+
+- Keep it in sync for everyone: the question, the options, and the vote
+  counts should be shared across all copies of the widget on the board.
+- When someone opens the board later, they should see the current tally, not a
+  blank poll.
+
+
+## Actions
+
+- When someone votes, tell the board which option was chosen (so other board
+  automations can react).
+- Allow the board to reset the poll or jump to a specific question from outside
+  the widget.
+
+
+## Data and external services
+
+- No external data. It is fully self-contained and needs no internet access,
+  API keys, or accounts.
+
+
+## Size
+
+- Roughly 900 × 600 to start, but it should still look fine if resized larger
+  or smaller.
+
+
+## Anything else / things I'm unsure about
+
+- The default question and options can be placeholders — I'll edit them later
+  in the configuration section.
+- If one vote per person is hard to guarantee, a simple per-widget vote is fine;
+  just note the limitation.
+
+
+# ─────────────────────────────────────────────────────────────
+# Quick checklist of questions for the idea.txt file to answer:
+#   • What is it and who is it for?
+#   • What should it do, step by step?
+#   • What should it look like? Which colors can editors change?
+#   • Should state be shared/synced across the board? Saved between sessions?
+#   • Does it talk to the internet or need an API key? (Here: no.)
+#   • What outgoing/incoming actions matter?
+#   • What default size?
+#   • Any assumptions or trade-offs you accept?
+# ─────────────────────────────────────────────────────────────
