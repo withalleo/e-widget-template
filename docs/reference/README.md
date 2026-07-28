@@ -13,6 +13,7 @@
 > [Help for users](./help.md) - opens using the Help button
 
 - [AI-INSTRUCTIONS](./AI-INSTRUCTIONS.md)
+- [AI-USER-COMMUNICATION](./AI-USER-COMMUNICATION.md)
 - [IMPORT-FOOTER](./IMPORT-FOOTER.md)
 - [LIBRARY](./LIBRARY.md)
 - [SECURITY](./SECURITY.md)
@@ -23,7 +24,7 @@
 | []()         | []()                               |
 | ------------ | ---------------------------------- |
 | Icon         | ![Icon](.././assets/icon-beta.png) |
-| Version      | `1.0.53`                           |
+| Version      | `1.0.79`                           |
 | Widget id    | `embed-browser`                    |
 | Author       | [Alleo](https://www.withalleo.com) |
 | Publisher id | `com.withalleo`                    |
@@ -95,6 +96,14 @@ Default in configuration: `true`
 
 Default in configuration: `false`
 
+### `DefaultEnableGetParams`
+
+Default in configuration: `false`
+
+### `DefaultEnableGetUser`
+
+Default in configuration: `false`
+
 ### `DefaultEnableIframeFuncAddContent`
 
 Default not set in configuration file
@@ -127,13 +136,37 @@ Default not set in configuration file
 
 Default in configuration: `transparent`
 
-### `DefaultOverwriteTextColor`
-
-Default in configuration: `false`
-
 ### `DefaultTextColor`
 
 Default in configuration: `null`
+
+### `DefaultPrimaryColor`
+
+Default in configuration: `null`
+
+### `DefaultFont`
+
+Default in configuration: `null`
+
+### `DefaultEnableBackendProxy`
+
+Default in configuration: `false`
+
+### `DefaultAllowedProtectedBackends`
+
+Default in configuration:
+
+```json
+{}
+```
+
+### `DefaultVersion`
+
+Default not set in configuration file
+
+### `DefaultHelpContent`
+
+Default not set in configuration file
 
 ### `DefaultIframeAllowSameOrigin`
 
@@ -167,6 +200,10 @@ Default in configuration: `false`
 
 Default in configuration: `false`
 
+### `Mode`
+
+Default not set in configuration file
+
 ### `AllowHighlyUnsecureOptions`
 
 Default in configuration: `false`
@@ -179,6 +216,10 @@ Default in configuration: `false`
 
 Default in configuration: `true`
 
+### `AllEWidgetsDisableHighlyUnsecureOptions`
+
+Default not set in configuration file
+
 ### `HighlyUnsecureWhitelist`
 
 Default in configuration:
@@ -186,6 +227,18 @@ Default in configuration:
 ```json
 []
 ```
+
+### `AllEWidgetsRequireStrictSecurity`
+
+Default not set in configuration file
+
+### `EWidgetLibUrl`
+
+Default not set in configuration file
+
+### `ImportFile`
+
+Default not set in configuration file
 
 ### `DisableScripts`
 
@@ -221,6 +274,30 @@ Default in configuration:
 []
 ```
 
+### `ExternalBackendConnections`
+
+Default in configuration:
+
+```json
+{
+    "CorsProxy": {
+        "DisplayName": "Alleo CORS Proxy",
+        "PrivacyPolicyUrl": "https://www.withalleo.com/privacy-policy",
+        "EnableUI": false,
+        "DefaultScope": "deployment",
+        "UseOrganizationKeyOverDeploymentKey": true,
+        "EnableChangingScope": true,
+        "DeploymentSharedSecretId": "CorsProxy",
+        "OrganizationSharedSecretId": "CorsProxy",
+        "AllowDeploymentSharedSecret": true,
+        "AllowOrganizationSharedSecret": true,
+        "AllowCustomDeploymentSharedSecret": false,
+        "AllowCustomOrganizationSharedSecret": false,
+        "AllowCustomApiConnection": false
+    }
+}
+```
+
 ## Additional permissions
 
 ### Viewer
@@ -234,6 +311,7 @@ Default in configuration:
 - `integrated-documentation`
 - `default-colors`
 - `widget-assets`
+- `default-network`
 
 ## Changelog
 
@@ -354,5 +432,125 @@ Default in configuration:
 ### 1.0.52
 
 - embed browser: add link to custom gpt assistant
+
+### 1.0.53
+
 - embed browser: adjust verbiage
 - embed browser: adjust AI instructions
+
+### 1.0.54
+
+- embed browser: adjust help
+- embed browser: adjust instructions to avoid keyboard controls
+- embed browser: adjust instructions to respond with the complete modified file if the user asks for changes
+- embed browser: fix hidden list that is not working properly.
+- embed browser: update action flow related verbiage to correct terminology
+
+### 1.0.56
+
+- embed browser: update action trigger definition to prevent double-generating each
+- embed browser: update help
+- embed browser: allow direct mic access when unsecure on on-prem
+- embed browser: do not allow the html select element
+- embed browser: move the iframe library to a local install
+
+### 1.0.58
+
+- embed browser: add option to package e-widgets as widgets
+
+### 1.0.59
+
+- embed browser: add security flags that can be applied to ALL e-widgets
+
+### 1.0.61
+
+- review widget tags and categories
+- embed browser: remove generated lib files from repo
+
+### 1.0.62
+
+- embed browser: add support for using alleo colors and fonts
+
+### 1.0.63
+
+- embed browser: add support for a default size, that is used in export and import
+- embed browser: add version to export, show version in the settings dialog.
+
+### 1.0.65
+
+- embed browser: add support for CORS bypass proxy
+- embed browser: update instructions to produce simpler code
+- embed browser: add support for color and font pickers
+
+### 1.0.66
+
+- embed browser: add support to pass get params from the board
+
+### 1.0.67
+
+- embed browser: make alleo.initialize() async and automatically handle the onloaded trigger.
+- embed browser: clarify API library code structure and description
+
+### 1.0.68
+
+- embed browser: adjust font sizes
+- embed browser: fix font picker
+
+### 1.0.69
+
+- embed browser: update library names for clarity and consistency
+- embed browser: reset widget settings to default when importing
+- embed browser: add support for backend proxy
+
+### 1.0.70
+
+- embed browser: adjust UX process in code generation and import
+
+### 1.0.71
+
+- embed browser: improve key setup UX
+- embed-browser: Remove local links from help.md #XXXXX
+- Revert "embed-browser: Remove local links from help.md #XXXXX"
+- embed browser: remove internal links from help
+
+### 1.0.72
+
+- embed browser: fix checkbox to disable the zoom button
+
+### 1.0.73
+
+- embed browser: adjust AI instructions, have a separate file to clarify user communication.
+- embed browser: adjust AI instructions to have separate widget name, description and help sections.
+- embed browser: add support for a custom name and help for the widget
+
+### 1.0.74
+
+- embed browser: add a permission dialog when importing
+
+### 1.0.75
+
+- embed browser: add a permission dialog when importing
+- embed browser: remove duplicate action triggers
+
+### 1.0.76
+
+- embed browser: clarify `iframeDisableUserActions` documentation for display-only widgets
+- embed browser: add some widget settings to the permission dialog when importing
+
+### 1.0.77
+
+- embed browser: adjust AI instructions
+- embed browser: update verbiage
+- embed browser: update mic use to better support mobile devices
+
+### 1.0.78
+
+- embed browser: review what counts as on-prem
+- embed browser: update instructions to not allow the cors proxy on on-prem
+- embed browser: use the backend proxy for authenticating with the cors proxy
+- embed browser: less individual network writes during import
+- embed browser: add tutorial content link to opening dialog, and help.
+
+### 1.0.79
+
+- embed browser: add information about the current user

@@ -5,7 +5,8 @@ GitHub Copilot, etc.) working in this repository.
 
 > This file is the single source of truth for the task and the coding rules.
 > `CLAUDE.md` and `.github/copilot-instructions.md` point here. Read this whole
-> file before writing any code.
+> file before writing any code. For full detail, the authoring docs in `docs/`
+> (`AI-INSTRUCTIONS.md`, `LIBRARY.md`, `IMPORT-FOOTER.md`) are authoritative.
 
 ---
 
@@ -49,14 +50,20 @@ interview the user before generating. **In this repository the idea comes from
 
 1. **Hosting** — Default: hosted in Alleo, fully self-contained (use the
    `<EWidgetSDK />` tag). Only use an external URL if `idea.txt` demands it.
-2. **Containment** — Default: no external network calls. Only call an external
-   API if the idea requires live data and names the source.
+2. **Containment** — Default: no external network calls. Only fetch live data if
+   the idea requires it and names the source. When you do fetch, use
+   `alleo.fetchProtectedUrlJSON` / `fetchProtectedUrlText` / `fetchProtectedUrlBinary`
+   (never a plain `fetch()`).
 3. **State synchronization** — Default: if the widget has any shared/interactive
    state and the idea implies collaboration, synchronize it via
    `alleo.setSyncedStatus` / `alleo.onSyncedStatusUpdate`. Otherwise keep
    instances independent.
 4. **Board object content** — Default: off. Only read/write other board objects
    if the idea explicitly asks for it.
+5. **Color & font pickers** — Decide yourself which of the 4 theme pickers
+   (background, primary, text, font) to expose in Alleo's settings panel via the
+   footer's `enabledColorPickers`. Default background/primary/text **on** for
+   visual widgets, font **off** unless typography is central.
 
 ### Build note — required summary
 
@@ -66,7 +73,8 @@ Always produce the `dist/<name>.README.md` build note with:
 2. **The action list**:
 
    **Outgoing actions** (fired on user interaction):
-    - `onloaded` — **always first; always present.** Fires once after init.
+    - `onloaded` — **always first; always present.** Fired automatically by
+      `alleo.initialize()` after init.
     - `action-id` — when it fires and what data it carries.
 
    **Incoming actions** (handled to drive widget behavior):
@@ -92,16 +100,41 @@ Always produce the `dist/<name>.README.md` build note with:
   build step. It runs directly in the browser.
 - **Do not include links or navigations that open content outside the iframe**
   (`<a href>` to external pages, `window.location`, `window.open`, redirects).
+- **Do not use any external images** (logos, icons, background images). Use inline
+  SVG for icons.
 - The code must be production-ready: clear, correct, organized, bug-free.
 
 ## Design guidelines
 
-- Prefer flat, material surfaces.
-- Prefer a dark background (e.g. `#051825`) with light text (e.g. `#f9fff6`).
-- Prefer the default sans-serif font.
-- Use `#6da8ff` (blue) as the default primary color.
-- Expose the main colors (background, text, primary) in the top-of-document
-  configuration section (see below) so they are easy to customize.
+- Prefer flat, material surfaces; minimalist design. Avoid unnecessary borders and
+  shadows, and avoid border radius where possible.
+- Prefer a dark background (e.g. `#051825`) with light text (e.g. `#f9fff6`); leave
+  the background transparent where possible.
+- Build the widget around **3 colors** — background, primary (`#6da8ff` blue by
+  default), and text. Derive any extra shades from these three (e.g. with CSS
+  `color-mix()`), not unrelated colors.
+- Use the Alleo-provided font (`var(--alleo-font, sans-serif)`) with at least 16px
+  base font size.
+- Design touch-first: every action must be usable with touch. Optional keyboard
+  support may be added on top. Do **not** use the native HTML `<select>` element —
+  build a custom dropdown instead.
+- Fit the content to the widget; avoid excessive margins. Keep content centered
+  when the user resizes the widget.
+
+### Alleo-provided CSS variables (required)
+
+`alleo.initialize()` applies the widget's configured theme as inline styles on
+`document.body`. **Always define these four variables with sensible defaults at
+the very top of the first `<style>` block** so the widget looks right before
+initialize responds or when opened standalone, and reference them everywhere:
+
+- `--alleo-background-color` (e.g. `#051825`)
+- `--alleo-text-color` (e.g. `#f9fff6`)
+- `--alleo-primary-color` (e.g. `#6da8ff`)
+- `--alleo-font` (e.g. `'PT Root UI', 'Ubuntu Sans', Helvetica, Verdana, sans-serif`)
+
+Alleo sets its real values as inline styles, so they always win over your defaults
+— no `!important` needed.
 
 ---
 
@@ -116,6 +149,7 @@ top-level functions or unstructured procedural code.
   `VotingWidget`, `DataDashboard`).
 - Use descriptive method names; the code should read like documentation.
 - Keep logic at most two nesting levels deep; use early returns / helper methods.
+- Follow YAGNI: implement only what the idea needs; keep it minimal.
 
 ### Configuration section
 
@@ -124,19 +158,18 @@ top of the HTML `<head>`, before any other style or logic. Keep it as the single
 place a user edits to customize the widget — separate from the widget logic.
 
 - Mark it with HTML comments:
-  `<!-- ═══════════════ Configuration ═══════════════ -->` …
-  `<!-- ═════════════ END Configuration ═════════════ -->`
+  `<!-- =============== Configuration =============== -->` …
+  `<!-- ============= END Configuration ============= -->`
 - Put **JS-tunable values** (labels, text, timing, endpoints, thresholds, toggle
   flags) in a `settings` object inside a `<script>`.
-- Put **theme values** (colors, fonts, sizes) in CSS custom properties on `body`
-  inside a `<style>`; reference them with `var(--…)` in the rest of the CSS.
-- Candidates: colors, labels, text, sizes, timing intervals, endpoints,
-  thresholds, toggle flags.
+- Put **theme values** in CSS custom properties on `body` inside a `<style>`,
+  starting with the four `--alleo-*` variables above; reference them with
+  `var(--…)` in the rest of the CSS.
 
 ```html
 <head>
     <!-- ...meta/title... -->
-    <!-- ═══════════════ Configuration ═══════════════ -->
+    <!-- =============== Configuration =============== -->
     <script>
         /** User-tunable values. Edit these to customize the widget. */
         const settings = {
@@ -148,12 +181,14 @@ place a user edits to customize the widget — separate from the widget logic.
     </script>
     <style>
         body {
-            --primary-color: #6da8ff;   /* primary accent (CSS color) */
-            --background-color: #051825; /* widget background (CSS color) */
-            --text-color: #f9fff6;       /* main text color (CSS color) */
+            /* Defaults — alleo.initialize() overrides these with the configured theme */
+            --alleo-background-color: #051825;
+            --alleo-text-color: #f9fff6;
+            --alleo-primary-color: #6da8ff;
+            --alleo-font: 'PT Root UI', 'Ubuntu Sans', Helvetica, Verdana, sans-serif;
         }
     </style>
-    <!-- ═════════════ END Configuration ═════════════ -->
+    <!-- ============= END Configuration ============= -->
 </head>
 ```
 
@@ -161,20 +196,17 @@ The main class still keeps a short in-class config block, but it **reads from
 `settings`** (and the CSS variables) rather than hard-coding values — so the
 top-of-document section stays the single source of truth.
 
-- Mark it: `/* ═══════════════ Configuration ═══════════════ */`
-- Each value gets a JSDoc comment with purpose, type, and constraints.
-
 ```js
 class ExampleWidget {
-    /* ═══════════════ Configuration ═══════════════ */
+    /* =============== Configuration =============== */
 
     /** @type {string} Text label shown on the primary action button. */
-    buttonLabel = settings.buttonLabel
+    buttonLabel = settings.buttonLabel ?? 'Submit'
 
     /** @type {number} Debounce interval in milliseconds for rapid clicks. */
-    debounceMs = settings.debounceMs
+    debounceMs = settings.debounceMs ?? 200
 
-    /* ═══════════════ End Configuration ═══════════════ */
+    /* ============= End Configuration ============= */
 }
 ```
 
@@ -190,43 +222,32 @@ class ExampleWidget {
 
 ---
 
-## Required comment block (top of the HTML file)
+## Required comment blocks (top of the HTML file)
 
-Place a commented-out summary at the very top of the generated HTML. List every
-outgoing action, every incoming action (with parameter names and types), board
-object operations, and any warnings.
+Place three standalone HTML comment blocks at the very top of the generated file,
+in this order: `WIDGETNAME:`, `WIDGETDESCRIPTION:`, `WIDGETHELP:`.
 
 ```html
-<!--
-  WIDGET SUMMARY
-  ==============
+<!-- WIDGETNAME:
+Submit Button
+-->
+<!-- WIDGETDESCRIPTION:
+A button that fires a submit action and syncs its last-clicked state across all board instances.
+-->
+<!-- WIDGETHELP:
+## What it does
 
-  Outgoing actions (triggered by user interaction via alleo.triggerAction):
-    - onloaded ()
-    - action-id-1 (param1: string, param2: number)
-
-  Incoming actions (handled via alleo.onIncomingAction):
-    - action-id-3 (param1: string)
-
-  Board object content:
-    - Reads object at whitelist index 1
-    - Writes (replace) object at whitelist index 1
-
-  ⚠ WARNING: This widget requires "Enable reading/writing board object content"
-             and board objects added to the whitelist in widget settings.
-
-  ⚠ WARNING: This widget requests microphone access via alleo.mic. The user must
-             enable "Allow content access to the microphone". (Camera access is
-             not available inside the iframe.)
+Short, end-user-facing Markdown help describing what the widget does, how to use
+it, and any settings worth knowing about.
 -->
 ```
 
-- `onloaded` is **always the first outgoing action listed.**
-- Include `⚠ WARNING` lines only when the widget genuinely needs those features.
-- Omit sections that have no entries.
-- This comment is the human-readable summary; the importable settings footer (see
-  *Importable settings footer* below) is the machine-readable source of truth for
-  the actions. Keep them consistent.
+- `WIDGETNAME:` and `WIDGETDESCRIPTION:` are **required**, plain text only (no
+  markdown, no line breaks).
+- `WIDGETHELP:` is optional but recommended: Markdown, **500–2000 characters**.
+- None of these blocks may contain the characters `<!--` or `-->` in their content.
+- Do **not** list the actions here — the importable settings footer (see below) is
+  the machine-readable source of truth for actions.
 
 ---
 
@@ -246,10 +267,11 @@ The iframe is sandboxed. The following are **unavailable** — do not use them:
 | `requestFullscreen()`, `requestPointerLock()`                                 | —                                                      |
 | Service workers, `PaymentRequest`, Web Bluetooth/USB, `navigator.credentials` | —                                                      |
 | Device sensors, same-origin parent access                                     | —                                                      |
+| Plain `fetch()` to a third-party URL (blocked by CORS)                         | `alleo.fetchProtectedUrlJSON` / `Text` / `Binary`      |
 
-**Allowed:** JavaScript, HTML forms (incl. submission), `fetch` /
-`XMLHttpRequest` to external APIs, `<canvas>`, Web Workers, WebSockets, Web Audio
-(without mic input), and standard DOM APIs not listed above.
+**Allowed:** JavaScript, HTML forms (incl. submission), `<canvas>`, Web Workers,
+WebSockets, Web Audio (without mic input), and standard DOM APIs not listed above.
+For any internet fetch, use the `alleo.fetchProtectedUrl*` methods.
 
 Full list: `docs/LIBRARY.md` → *Limitations*.
 
@@ -266,7 +288,6 @@ Add the self-replacing `<EWidgetSDK />` tag once, before any other script,
 anywhere in `<body>`. **Never** add a closing `</EWidgetSDK>` tag.
 
 ```html
-
 <body>
 <EWidgetSDK/>
 <!-- your content -->
@@ -281,8 +302,7 @@ anywhere in `<body>`. **Never** add a closing `</EWidgetSDK>` tag.
 If hosting externally, do **not** use `<EWidgetSDK />`. Instead:
 
 ```html
-
-<script src="https://unpkg.com/@withalleo/ewidget-utils/dist/ewidget-utils.umd.cjs"></script>
+<script src="https://widgets.withalleo.com/com.withalleo/embed-browser/assets/widgetAssets/ewidget-utils.umd.js"></script>
 <script>
     const alleo = AlleoEWidget.getEmbedWidgetMessenger({debug: false})
 </script>
@@ -290,26 +310,34 @@ If hosting externally, do **not** use `<EWidgetSDK />`. Instead:
 
 ### SDK API reference (summary)
 
-| Method                                                   | Purpose                                                                                          |
+| Method / property                                        | Purpose                                                                                          |
 |----------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| `alleo.initialize(options?)`                             | Call once at startup. Requests synced status, params, user, and theme colors/font, then fires `onloaded` automatically. Returns a promise that always resolves. |
+| `alleo.getParams`                                        | Read-only `Record<string,string>` of shared `__embed__` URL params (prefix stripped).            |
+| `alleo.user`                                             | Read-only profile of the current board user.                                                    |
 | `alleo.triggerAction(actionId, data?)`                   | Fire an outgoing action to the board.                                                            |
 | `alleo.onIncomingAction(handler)`                        | Handle actions from other board objects. Returns unsubscribe.                                    |
 | `alleo.setSyncedStatus(status)`                          | Shallow-merge key/values into shared state.                                                      |
-| `alleo.requestSyncedStatus()`                            | Request current shared state (fires `onSyncedStatusUpdate` once).                                |
+| `alleo.requestSyncedStatus()`                            | Request current shared state (fires `onSyncedStatusUpdate` once). `initialize()` does this for you. |
 | `alleo.onSyncedStatusUpdate(handler)`                    | Subscribe to shared-state changes (always full state). Returns unsubscribe.                      |
+| `alleo.requestColorUpdate()`                             | Re-apply the configured colors/font as `--alleo-*` variables. `initialize()` does this for you.  |
 | `alleo.addContent(params)`                               | Add a new object to the board (html / notepad / sticky-note / image / video).                    |
+| `alleo.fetchProtectedUrlJSON/Text/Binary(keyId, input, init?)` | Fetch from the internet via the Alleo proxy. `keyId: null` for public URLs; a real `keyId` for authenticated APIs. |
 | `alleo.getBoardObjectContent(index, options?)`           | Read text of a whitelisted object. Returns `Promise<string[]>`.                                  |
 | `alleo.replaceBoardObjectContent(index, text, options?)` | Replace a whitelisted object's text (fire-and-forget).                                           |
 | `alleo.appendBoardObjectContent(index, text, options?)`  | Append to a whitelisted object's text (fire-and-forget).                                         |
 | `alleo.onError(handler)`                                 | Handle errors from board-object operations. Returns unsubscribe.                                 |
 | `alleo.mic.*`                                            | Microphone bridge (`start`, `stop`, `onTrack`, `onStarted`, `onStopped`, `onError`, `isActive`). |
 
-Full signatures, parameter shapes, and full samples: **`docs/LIBRARY.md`** and
-**`docs/ADVANCED.md`**. Runnable examples: the **`samples/`** folder.
+Full signatures, parameter shapes, and full samples: **`docs/LIBRARY.md`**.
+Runnable examples: the **`samples/`** folder.
 
 Key notes:
 
 - Board object `index` is **1-based** (position in the whitelist), not an object id.
+- For internet fetches, **always** prefer `alleo.fetchProtectedUrl*` over `fetch()`;
+  pass `keyId: null` for public resources, a real `keyId` for authenticated APIs.
+  **Never** hard-code an API key/secret in the HTML.
 - For `alleo.mic`, register `onTrack` **before** `start()`, handle `onError`, and
   call `stop()` when audio is no longer needed.
 
@@ -317,11 +345,17 @@ Key notes:
 
 ## Actions — critical rules
 
-### `onloaded` (mandatory)
+### `onloaded` (mandatory, fired automatically)
 
-Every widget must call `alleo.triggerAction('onloaded')` exactly **once**, after
-it is fully initialized: DOM ready, listeners attached, `requestSyncedStatus()`
-called, and any initial fetch completed.
+Every widget signals readiness with the `onloaded` action exactly **once**, after
+full initialization. **`alleo.initialize()` fires `onloaded` for you** once it
+resolves — do **not** call `alleo.triggerAction('onloaded')` yourself. Make sure
+all startup work (listeners attached, initial fetch, synced state applied) is done
+before or awaited by `initialize()`.
+
+`onloaded` is still a normal outgoing trigger from the board's point of view, so it
+**must** have a matching `{ "id": "onloaded", "label": "Loaded" }` entry in the
+footer's `outgoingActions`, or the board silently drops it.
 
 ### Outgoing actions
 
@@ -347,8 +381,9 @@ If the widget has shared/interactive state and synchronization is appropriate:
 
 - After **every** interaction that changes what the widget displays, call
   `alleo.setSyncedStatus(...)` immediately after updating the local UI.
-- On startup, call `alleo.requestSyncedStatus()` and apply the returned state
-  **before** firing `onloaded`.
+- On startup, `await alleo.initialize()` (which requests the synced status and
+  theme) and apply the returned state in `onSyncedStatusUpdate` **before**
+  `onloaded` fires automatically.
 - `onSyncedStatusUpdate` must cover every key the widget writes; rebuild the UI
   from the received status (the synced status is the source of truth).
 - Store minimal, JSON-serializable state. Batch related keys into one
@@ -356,7 +391,7 @@ If the widget has shared/interactive state and synchronization is appropriate:
 
 ```js
 alleo.onSyncedStatusUpdate((status) => this.applySyncedStatus(status))
-alleo.requestSyncedStatus()
+await alleo.initialize() // requests synced status + theme, then fires onloaded
 // ...later, on interaction:
 alleo.setSyncedStatus({selectedIndex: 2, filterText: 'active'})
 ```
@@ -365,13 +400,15 @@ alleo.setSyncedStatus({selectedIndex: 2, filterText: 'active'})
 
 ## Required widget settings (list these in the build note)
 
-| Capability                  | Settings the user must enable                                                                                   |
-|-----------------------------|-----------------------------------------------------------------------------------------------------------------|
-| Outgoing / incoming actions | **Enable Alleo board features for enclosed content**                                                            |
-| Add content to board        | Board features + **Enable adding new content to the board**                                                     |
-| Synced status               | Board features + **Enable synchronizing status**                                                                |
-| Board object content        | Board features + **Enable reading/writing board object content** + add objects to **Whitelisted board objects** |
-| Microphone (`alleo.mic`)    | **Allow content access to the microphone**                                                                      |
+| Capability                        | Settings the user must enable                                                                                   |
+|-----------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| Outgoing / incoming actions       | **Enable Alleo board features for enclosed content**                                                            |
+| Add content to board              | Board features + **Enable adding new content to the board**                                                     |
+| Synced status                     | Board features + **Enable synchronizing status**                                                                |
+| Board object content              | Board features + **Enable reading/writing board object content** + add objects to **Whitelisted board objects** |
+| Networked fetches (`fetchProtectedUrl*`) | Board features + **Allow use of protected backends** (for public and authenticated calls; authenticated calls also need an `allowedProtectedBackends` entry + the owner entering the credential) |
+| URL params / user profile         | **Share "\_\_embed\_\_" URL parameters** / **Allow access to the current user profile**                         |
+| Microphone (`alleo.mic`)          | **Allow content access to the microphone**                                                                      |
 
 ---
 
@@ -381,8 +418,7 @@ To make the widget **importable as a single file**, append a settings footer at
 the **very end** of the file, after the closing `</html>`. The footer is one HTML
 comment whose JSON pre-configures the Alleo settings so they match what the HTML
 actually does. On import, Alleo stores everything before the footer as the
-widget's HTML and applies the footer settings. Without it, the user must enable
-every capability by hand.
+widget's HTML and applies the footer settings.
 
 The footer is **mandatory and not optional**, and so is its full set of keys.
 **Every generated widget must emit the footer with the complete required key set
@@ -391,8 +427,7 @@ and set it to its "off" value (`false` / `[]` / empty) — never omit a required
 key.
 
 ```html
-<!--
-WIDGETSETTINGS:
+<!-- WIDGETSETTINGS:
 {
     "iframeAllowScripts": true,
     "iframeAllowForms": false,
@@ -403,15 +438,24 @@ WIDGETSETTINGS:
     "iframeReferrerPolicy": "no-referrer",
     "iframeUnloadWhenOffScreen": true,
     "enableIframeCommunication": true,
+    "enableGetParams": false,
+    "enableGetUser": false,
     "enableIframeFuncAddContent": false,
     "enableSyncedStatus": false,
     "enableIframeFuncBoardObjectContent": false,
+    "enableBackendProxy": false,
     "incomingActions": [],
     "outgoingActions": [],
     "backgroundColor": "#051825",
-    "overwriteTextColor": false,
     "textColor": "",
-    "iframeAllowMicrophone": false
+    "primaryColor": "",
+    "font": "",
+    "enabledColorPickers": { "background": false, "primary": false, "text": false, "font": false },
+    "iframeAllowMicrophone": false,
+    "requiredAPIfunctions": ["initialize"],
+    "version": "1.20260728",
+    "DefaultWidth": 1280,
+    "DefaultHeight": 720
 }
 -->
 ```
@@ -424,28 +468,42 @@ Hard rules:
   JSON, which must be one `JSON.parse`-able object (double-quoted keys/strings, no
   trailing commas, no comments, no `undefined`).
 - Never let the sequence `-->` appear inside a JSON string value.
-- Include **only** allowed keys. Never emit `htmlContent`, `sourceType`, `url`, or
-  `fileId` — those are derived on import; any other key aborts the import.
+- Include **only** allowed keys. Never emit `htmlContent`, `sourceType`, `url`,
+  `fileId`, or the legacy `overwriteTextColor` — those are derived on import or
+  unsupported; any other key aborts the import.
 - **All keys shown above are required in every footer** — present and explicitly
   set. Set `enableIframeCommunication: true` whenever the HTML uses `alleo.*`, and
   turn each feature flag (`enableSyncedStatus`, `enableIframeFuncAddContent`,
-  `enableIframeFuncBoardObjectContent`, `iframeAllowMicrophone`) `true` only when
-  the HTML actually uses it — otherwise keep it `false`. Do not drop unused keys.
+  `enableIframeFuncBoardObjectContent`, `enableBackendProxy`, `enableGetParams`,
+  `enableGetUser`, `iframeAllowMicrophone`) `true` only when the HTML actually uses
+  it — otherwise keep it `false`. Do not drop unused keys.
 - Add one `outgoingActions` entry per `alleo.triggerAction('<id>', data)` (one
   `outputData` slot per `data` key) and one `incomingActions` entry per id handled
   in `alleo.onIncomingAction` (with `inputData` slots). The ids and parameter ids
-  **must exactly match** the strings used in the HTML. Do **not** list `onloaded`.
+  **must exactly match** the strings used in the HTML. **Do** list `onloaded` in
+  `outgoingActions` (`{ "id": "onloaded", "label": "Loaded" }`, no `outputData`).
+- Mirror the colors/font you used in `backgroundColor` / `textColor` /
+  `primaryColor` / `font`, and set `enabledColorPickers` to the pickers you decided
+  to expose.
+- `requiredAPIfunctions` lists every distinct `alleo.*` function the HTML calls,
+  without the `alleo.` prefix (e.g. `["initialize", "triggerAction"]`).
+- `version` is `<version>.YYYYMMDD` — start at `1`, increment on every edit, and
+  refresh the date to today. `DefaultWidth` / `DefaultHeight` are the design size.
+- When `enableBackendProxy: true` and a non-null `keyId` is used, add a matching
+  `allowedProtectedBackends[keyId]` entry with an exact, non-empty `allowedUrls`
+  list. The footer never contains the actual secret.
 
-The full key list, the `StoredActionTrigger` shape, and a worked example are in
-**`docs/IMPORT-FOOTER.md`**. The `samples/*.Alleo-eWidget.txt` files each show a
-complete HTML document plus a matching footer.
+The full key list, the `StoredActionTrigger` shape, protected-backend schema, and a
+worked example are in **`docs/IMPORT-FOOTER.md`**. The `samples/*.Alleo-eWidget.txt`
+files each show a complete HTML document plus a matching footer.
 
 ---
 
 ## Responsive layout
 
 - Assume a default size of **1280×720**, but the user can resize/scale the widget
-  to any size or ratio — design responsively.
+  to any size or ratio — design responsively. Mirror the design size in the
+  footer's `DefaultWidth` / `DefaultHeight`.
 - Use `box-sizing: border-box` globally to avoid overflow.
 - Scroll inside the iframe only if needed; prefer fitting content. If scrolling is
   unavoidable, note it in the build note.
@@ -457,23 +515,23 @@ complete HTML document plus a matching footer.
 - [ ] Read `idea.txt`; recorded any assumptions in the build note.
 - [ ] Output written to `dist/<name>.Alleo-eWidget.txt` (HTML content + settings footer, `.txt` extension).
 - [ ] Build note written to `dist/<name>.README.md`.
-- [ ] Single self-contained HTML document; no external file references (other than API/CDN).
+- [ ] Single self-contained HTML document; no external file references (other than API/CDN); no external images (inline SVG only).
 - [ ] `<EWidgetSDK />` (or the external-URL script) loads before any other script.
-- [ ] Top-of-file `WIDGET SUMMARY` comment lists all outgoing/incoming actions with params.
-- [ ] Summary lists board object operations (whitelist indices) if used.
-- [ ] `onloaded` fired exactly once after full init, and listed first.
-- [ ] No links/navigations leaving the iframe; no blocked APIs used.
-- [ ] Layout is responsive; does not rely on a fixed iframe size.
+- [ ] `WIDGETNAME:`, `WIDGETDESCRIPTION:`, `WIDGETHELP:` comment blocks present at the top, in that order.
+- [ ] The four `--alleo-*` CSS variables are defined with defaults at the top of the first `<style>`.
+- [ ] Summary/build note lists board object operations (whitelist indices) if used.
+- [ ] `alleo.initialize()` awaited once on startup; `onloaded` fires automatically (not a manual `triggerAction('onloaded')`).
+- [ ] No links/navigations leaving the iframe; no blocked APIs used; internet fetches use `alleo.fetchProtectedUrl*`.
+- [ ] Layout is responsive and touch-first; no native `<select>`; does not rely on a fixed iframe size.
 - [ ] Outgoing actions fire on user interactions; incoming actions are handled.
-- [ ] If synced: state writes on every change, `onSyncedStatusUpdate` covers all keys, `requestSyncedStatus` called on
-  startup before `onloaded`.
+- [ ] If synced: state writes on every change, `onSyncedStatusUpdate` covers all keys, `initialize()` awaited on startup.
 - [ ] `alleo.onError` registered if any board-object operations are used.
-- [ ] If using mic: `onTrack` registered before `start()`, `onError` handled, `stop()` called when done, and a ⚠ warning
-  added to the summary.
+- [ ] If using mic: `onTrack` registered before `start()`, `onError` handled, `stop()` called when done, and a warning added to the build note.
 - [ ] Valid plain ES2020+ only; class-based; tunables grouped in a top-of-document `<head>` configuration section (`settings` object + CSS variables) that the class reads from, with JSDoc; every member documented.
 - [ ] Importable `WIDGETSETTINGS:` footer appended as the **last** content, after `</html>`; valid JSON, only allowed
   keys, **all required keys present and explicitly set** (unused features `false` / `[]` / empty), feature flags and
-  action ids/params match the HTML, `onloaded` not listed.
+  action ids/params match the HTML, `onloaded` **is** listed in `outgoingActions`, `requiredAPIfunctions` and `version`
+  present.
 
 ---
 
@@ -485,8 +543,7 @@ audience so you know what to read while building vs. what is user-facing advice.
 **Authoring docs — consult while writing widget code:**
 
 - `docs/LIBRARY.md` — SDK methods with full examples and the limitations list. **Primary SDK manual.**
-- `docs/ADVANCED.md` — full type definitions and message protocol.
-- `docs/IMPORT-FOOTER.md` — the importable settings footer: format, allowed keys, and worked example.
+- `docs/IMPORT-FOOTER.md` — the importable settings footer: format, allowed keys, protected backends, and worked example.
 - `docs/AI-INSTRUCTIONS.md` — the full upstream authoring guide (this file is the adapted, authoritative version).
 
 **Reference docs — user-facing advice, not authoring instructions (you usually do not need these):**

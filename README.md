@@ -57,7 +57,6 @@ See [`docs/README.md`](./docs/README.md) for the full index. In short:
 **Authoring docs** (read while building a widget):
 
 - [`docs/LIBRARY.md`](./docs/LIBRARY.md) — SDK methods, examples, and sandbox limitations.
-- [`docs/ADVANCED.md`](./docs/ADVANCED.md) — full type definitions and message protocol.
 - [`docs/IMPORT-FOOTER.md`](./docs/IMPORT-FOOTER.md) — the importable `WIDGETSETTINGS:` footer format and allowed keys.
 - [`docs/AI-INSTRUCTIONS.md`](./docs/AI-INSTRUCTIONS.md) — the full upstream authoring guide.
 

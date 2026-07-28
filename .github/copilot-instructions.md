@@ -22,17 +22,26 @@ If `idea.txt` is empty, stop and ask the user to fill it in.
 - One self-contained HTML document. All CSS in `<style>`, all JS in `<script>`.
 - Plain ES2020+ only — no TypeScript/JSX/build step.
 - Organize logic into classes with a documented configuration block at the top.
+- Define the four `--alleo-*` CSS variables (background/text/primary/font) with
+  defaults at the top of the first `<style>`.
 - Use the `alleo` SDK; add `<EWidgetSDK />` once in `<body>` before any script.
-- Fire `alleo.triggerAction('onloaded')` exactly once after full init.
+- Call `await alleo.initialize()` once at startup — it applies synced state and
+  theme and fires `onloaded` **automatically**. Do not call
+  `alleo.triggerAction('onloaded')` yourself.
 - Fire outgoing actions on every meaningful interaction; handle incoming actions.
+- Add the `WIDGETNAME:`, `WIDGETDESCRIPTION:`, and `WIDGETHELP:` comment blocks at
+  the top of the file, in that order.
 - Append the importable `WIDGETSETTINGS:` footer as the last content in the file.
   The footer is **mandatory** and must include the **full required key set** (set
-  unused features to `false` / `[]` / empty), matching the actions/features the
-  HTML uses (see `docs/IMPORT-FOOTER.md`).
+  unused features to `false` / `[]` / empty; include `version`,
+  `requiredAPIfunctions`, `enabledColorPickers`, `DefaultWidth`/`DefaultHeight`),
+  matching the actions/features the HTML uses. `onloaded` **is** listed in
+  `outgoingActions` (see `docs/IMPORT-FOOTER.md`).
 - The iframe is sandboxed — no `localStorage`, cookies, `window.open`, `alert`,
-  `getUserMedia`, etc. Use the SDK equivalents.
+  `getUserMedia`, plain `fetch()` to third-party URLs, etc. Use the SDK
+  equivalents (e.g. `alleo.fetchProtectedUrlJSON` for internet fetches).
 - Authoring docs (read while coding): `docs/LIBRARY.md` (SDK manual),
-  `docs/ADVANCED.md` (types/protocol), `docs/IMPORT-FOOTER.md` (import footer).
+  `docs/IMPORT-FOOTER.md` (import footer), `docs/AI-INSTRUCTIONS.md` (full guide).
   Index: `docs/README.md`.
 - `docs/reference/` is user-facing advice about the E-widget (help, security,
   tracked events, settings) — not authoring instructions.
