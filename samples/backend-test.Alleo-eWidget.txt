@@ -1,0 +1,560 @@
+<!-- WIDGETNAME:
+Multi-Backend Test Console
+-->
+<!-- WIDGETDESCRIPTION:
+Tests three public API backends and displays a compact summary of each response.
+-->
+<!-- WIDGETHELP:
+## What it does
+
+This widget provides three buttons for testing public, unauthenticated API backends. It can retrieve a sample todo from JSONPlaceholder, a random quote from DummyJSON, or the current Budapest temperature from Open-Meteo. The most recent result appears in a shared response panel with the backend name, request status, duration, and selected response data.
+
+## How to use it
+
+1. Add the widget to an Alleo board with internet access.
+2. Tap **Test Todo**, **Test Quote**, or **Test Weather**.
+3. Review the response status and returned fields in the result panel.
+4. Connect board automations to the `backend-tested` trigger to react to completed user tests.
+5. Use the incoming actions to run any of the three tests from another board object or automation.
+
+## Settings
+
+Board editors can adjust the background, primary, and text colors. Endpoint URLs, labels, and the Budapest weather coordinates are grouped in the configuration section near the top of the file.
+
+## Notes
+
+All endpoints are public and require no API key, but the widget fetches them through Alleo's protected backend proxy (`alleo.fetchProtectedUrlJSON` with `keyId: null`) so it works from the sandboxed iframe. The board must have **Allow use of protected backends** enabled and internet access; it does not work in an offline Alleo deployment. A failed request shows an inline error and does not affect the other test buttons. Widget state is independent for each instance.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multi-Backend Test Console</title>
+
+    <!-- =============== Configuration =============== -->
+    <script>
+        const settings = {
+            /** @type {string} Public endpoint used to retrieve a sample todo. */
+            todoEndpoint: 'https://jsonplaceholder.typicode.com/todos/1',
+            /** @type {string} Public endpoint used to retrieve a random quote. */
+            quoteEndpoint: 'https://dummyjson.com/quotes/random',
+            /** @type {string} Public endpoint used to retrieve current Budapest weather. */
+            weatherEndpoint: 'https://api.open-meteo.com/v1/forecast?latitude=47.4979&longitude=19.0402&current=temperature_2m&timezone=Europe%2FBudapest',
+            /** @type {string} Main heading displayed above the backend buttons. */
+            heading: 'Backend test console',
+            /** @type {string} Text shown before any test has run. */
+            idleMessage: 'Choose a backend to run a public API test.',
+            /** @type {string} Text shown while a request is active. */
+            loadingMessage: 'Testing backend…',
+            /** @type {string} Generic error message used when a request fails. */
+            errorMessage: 'The backend request failed.',
+            /** @type {number} Maximum characters displayed from a text field. */
+            maximumTextLength: 240
+        }
+    </script>
+    <style>
+        body {
+            /* Alleo theme defaults; alleo.initialize() overrides them at runtime. */
+            --alleo-background-color: #051825;
+            --alleo-text-color: #f9fff6;
+            --alleo-primary-color: #6da8ff;
+            --alleo-font: 'PT Root UI', Roboto, 'Helvetica Neue', 'Ubuntu Sans', Helvetica, Verdana, sans-serif;
+
+            /** Fixed visual width while the iframe remains responsive. */
+            --content-width: 560px;
+        }
+    </style>
+    <!-- ============= END Configuration ============= -->
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            min-width: 100%;
+            min-height: 100%;
+            margin: 0;
+        }
+
+        body {
+            display: grid;
+            place-items: center;
+            padding: 16px;
+            overflow: auto;
+            font-family: var(--alleo-font, sans-serif);
+            font-size: 16px;
+            background: var(--alleo-background-color);
+            color: var(--alleo-text-color);
+        }
+
+        .widget {
+            width: min(100%, var(--content-width));
+            padding: 20px;
+            background: color-mix(in srgb, var(--alleo-background-color) 92%, var(--alleo-text-color));
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 1.3rem;
+            line-height: 1.3;
+        }
+
+        .intro {
+            margin: 0 0 18px;
+            color: color-mix(in srgb, var(--alleo-text-color) 74%, var(--alleo-background-color));
+            line-height: 1.45;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        button {
+            min-height: 52px;
+            border: 0;
+            padding: 12px;
+            cursor: pointer;
+            touch-action: manipulation;
+            font: inherit;
+            font-weight: 700;
+            background: var(--alleo-primary-color);
+            color: color-mix(in srgb, var(--alleo-text-color) 92%, var(--alleo-background-color));
+        }
+
+        button:hover {
+            background: color-mix(in srgb, var(--alleo-primary-color) 84%, var(--alleo-text-color));
+        }
+
+        button:active {
+            background: color-mix(in srgb, var(--alleo-primary-color) 78%, var(--alleo-background-color));
+        }
+
+        button:disabled {
+            cursor: wait;
+            opacity: 0.58;
+        }
+
+        .result {
+            min-height: 190px;
+            padding: 16px;
+            background: color-mix(in srgb, var(--alleo-background-color) 84%, var(--alleo-text-color));
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .backend-name {
+            font-weight: 700;
+        }
+
+        .status {
+            color: color-mix(in srgb, var(--alleo-text-color) 74%, var(--alleo-background-color));
+            text-align: right;
+        }
+
+        .details {
+            display: grid;
+            gap: 10px;
+            margin: 0;
+        }
+
+        .detail-row {
+            display: grid;
+            grid-template-columns: 110px minmax(0, 1fr);
+            gap: 12px;
+        }
+
+        dt {
+            color: color-mix(in srgb, var(--alleo-text-color) 66%, var(--alleo-background-color));
+        }
+
+        dd {
+            min-width: 0;
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .error {
+            color: var(--alleo-text-color);
+        }
+
+        @media (max-width: 520px) {
+            .buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .detail-row {
+                grid-template-columns: 90px minmax(0, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <EWidgetSDK />
+
+    <main class="widget">
+        <h1 id="heading">Backend test console</h1>
+        <p class="intro">Run a simple request against one of three public test services.</p>
+
+        <section class="buttons" aria-label="Backend tests">
+            <button type="button" data-backend="todo">Test Todo</button>
+            <button type="button" data-backend="quote">Test Quote</button>
+            <button type="button" data-backend="weather">Test Weather</button>
+        </section>
+
+        <section class="result" aria-live="polite">
+            <div class="result-header">
+                <span id="backend-name" class="backend-name">Ready</span>
+                <span id="status" class="status">Idle</span>
+            </div>
+            <dl id="details" class="details">
+                <div class="detail-row">
+                    <dt>Message</dt>
+                    <dd id="message">Choose a backend to run a public API test.</dd>
+                </div>
+            </dl>
+        </section>
+    </main>
+
+    <script>
+        /**
+         * MultiBackendTestConsole coordinates public API tests and renders compact results.
+         */
+        class MultiBackendTestConsole {
+            /* =============== Configuration =============== */
+
+            /** Public todo endpoint. */
+            todoEndpoint = settings.todoEndpoint
+
+            /** Public quote endpoint. */
+            quoteEndpoint = settings.quoteEndpoint
+
+            /** Public weather endpoint. */
+            weatherEndpoint = settings.weatherEndpoint
+
+            /** Default idle message. */
+            idleMessage = settings.idleMessage
+
+            /** Loading message shown while requests are active. */
+            loadingMessage = settings.loadingMessage
+
+            /** Generic request failure message. */
+            errorMessage = settings.errorMessage
+
+            /** Maximum displayed text length. */
+            maximumTextLength = settings.maximumTextLength
+
+            /* =============== End Configuration =============== */
+
+            /**
+             * Creates the console, stores DOM references, and starts initialization.
+             */
+            constructor() {
+                /** @type {NodeListOf<HTMLButtonElement>} Backend test buttons. */
+                this.buttons = document.querySelectorAll('[data-backend]')
+
+                /** @type {HTMLElement} Backend name display. */
+                this.backendNameElement = document.getElementById('backend-name')
+
+                /** @type {HTMLElement} Request status display. */
+                this.statusElement = document.getElementById('status')
+
+                /** @type {HTMLElement} Result details container. */
+                this.detailsElement = document.getElementById('details')
+
+                /** @type {boolean} Whether a backend request is currently active. */
+                this.isLoading = false
+
+                this.bindUserEvents()
+                this.bindIncomingActions()
+                this.initialize()
+            }
+
+            /**
+             * Initializes Alleo after all DOM and action handlers are ready.
+             */
+            async initialize() {
+                await alleo.initialize()
+                console.log('[MultiBackendTestConsole.initialize] Widget initialized')
+            }
+
+            /**
+             * Attaches touch-friendly click handlers to each backend button.
+             */
+            bindUserEvents() {
+                this.buttons.forEach((button) => {
+                    button.addEventListener('click', () => this.runBackendTest(button.dataset.backend, true))
+                })
+            }
+
+            /**
+             * Registers incoming actions that can run each backend test remotely.
+             */
+            bindIncomingActions() {
+                alleo.onIncomingAction(({ actionId }) => {
+                    const actionMap = {
+                        'test-todo-backend': 'todo',
+                        'test-quote-backend': 'quote',
+                        'test-weather-backend': 'weather'
+                    }
+                    const backendId = actionMap[actionId]
+                    if (backendId) this.runBackendTest(backendId, false)
+                })
+            }
+
+            /**
+             * Runs a selected backend test and updates the result panel.
+             * @param {string} backendId Identifier for the selected backend.
+             * @param {boolean} triggeredByUser Whether the test came from a button press.
+             */
+            async runBackendTest(backendId, triggeredByUser) {
+                if (this.isLoading) return
+
+                const backend = this.getBackendDefinition(backendId)
+                if (!backend) return
+
+                this.setLoadingState(true, backend.label)
+                const startedAt = performance.now()
+
+                try {
+                    const payload = await alleo.fetchProtectedUrlJSON(null, backend.endpoint)
+                    const result = backend.normalize(payload)
+                    const durationMs = Math.round(performance.now() - startedAt)
+
+                    this.renderResult(backend.label, 'Success', durationMs, result)
+                    console.log(`[MultiBackendTestConsole.runBackendTest] ${backendId} succeeded`, result)
+
+                    if (triggeredByUser) {
+                        alleo.triggerAction('backend-tested', {
+                            backend: backendId,
+                            success: true,
+                            durationMs,
+                            result: this.stringifyResult(result)
+                        })
+                    }
+                } catch (error) {
+                    const durationMs = Math.round(performance.now() - startedAt)
+                    const message = error instanceof Error ? error.message : this.errorMessage
+
+                    this.renderResult(backend.label, 'Failed', durationMs, { Error: message }, true)
+                    console.error(`[MultiBackendTestConsole.runBackendTest] ${backendId} failed`, error)
+
+                    if (triggeredByUser) {
+                        alleo.triggerAction('backend-tested', {
+                            backend: backendId,
+                            success: false,
+                            durationMs,
+                            result: message
+                        })
+                    }
+                } finally {
+                    this.setLoadingState(false, backend.label)
+                }
+            }
+
+            /**
+             * Returns endpoint and normalization details for a backend.
+             * @param {string} backendId Identifier for the selected backend.
+             * @returns {{label: string, endpoint: string, normalize: function(object): Record<string, string | number | boolean>} | null}
+             */
+            getBackendDefinition(backendId) {
+                const backends = {
+                    todo: {
+                        label: 'JSONPlaceholder Todo',
+                        endpoint: this.todoEndpoint,
+                        normalize: (payload) => ({
+                            ID: Number(payload.id),
+                            Title: this.truncateText(String(payload.title ?? '')),
+                            Completed: Boolean(payload.completed)
+                        })
+                    },
+                    quote: {
+                        label: 'DummyJSON Quote',
+                        endpoint: this.quoteEndpoint,
+                        normalize: (payload) => ({
+                            ID: Number(payload.id),
+                            Quote: this.truncateText(String(payload.quote ?? '')),
+                            Author: this.truncateText(String(payload.author ?? 'Unknown'))
+                        })
+                    },
+                    weather: {
+                        label: 'Open-Meteo Weather',
+                        endpoint: this.weatherEndpoint,
+                        normalize: (payload) => ({
+                            Location: 'Budapest',
+                            Temperature: `${payload.current?.temperature_2m ?? '—'} ${payload.current_units?.temperature_2m ?? ''}`.trim(),
+                            Time: String(payload.current?.time ?? '—')
+                        })
+                    }
+                }
+
+                return backends[backendId] ?? null
+            }
+
+            /**
+             * Renders a backend response as labeled rows.
+             * @param {string} backendName Human-readable backend name.
+             * @param {string} status Request status text.
+             * @param {number} durationMs Request duration in milliseconds.
+             * @param {Record<string, string | number | boolean>} details Values to display.
+             * @param {boolean} isError Whether the response represents an error.
+             */
+            renderResult(backendName, status, durationMs, details, isError = false) {
+                this.backendNameElement.textContent = backendName
+                this.statusElement.textContent = `${status} · ${durationMs} ms`
+                this.detailsElement.textContent = ''
+
+                Object.entries(details).forEach(([label, value]) => {
+                    const row = document.createElement('div')
+                    row.className = 'detail-row'
+
+                    const term = document.createElement('dt')
+                    term.textContent = label
+
+                    const description = document.createElement('dd')
+                    description.textContent = String(value)
+                    if (isError) description.className = 'error'
+
+                    row.append(term, description)
+                    this.detailsElement.append(row)
+                })
+            }
+
+            /**
+             * Updates all controls while a request is running.
+             * @param {boolean} isLoading Whether a request is active.
+             * @param {string} backendName Current backend name.
+             */
+            setLoadingState(isLoading, backendName) {
+                this.isLoading = isLoading
+                this.buttons.forEach((button) => {
+                    button.disabled = isLoading
+                })
+
+                if (isLoading) {
+                    this.backendNameElement.textContent = backendName
+                    this.statusElement.textContent = this.loadingMessage
+                }
+            }
+
+            /**
+             * Limits text length for compact rendering.
+             * @param {string} value Text to shorten.
+             * @returns {string} Shortened text.
+             */
+            truncateText(value) {
+                if (value.length <= this.maximumTextLength) return value
+                return `${value.slice(0, this.maximumTextLength - 1)}…`
+            }
+
+            /**
+             * Converts result fields into a short action payload string.
+             * @param {Record<string, string | number | boolean>} result Result fields.
+             * @returns {string} Compact JSON representation.
+             */
+            stringifyResult(result) {
+                return this.truncateText(JSON.stringify(result))
+            }
+        }
+
+        /** Main widget instance. */
+        const widget = new MultiBackendTestConsole()
+    </script>
+</body>
+</html>
+
+<!-- WIDGETSETTINGS:
+{
+    "iframeAllowScripts": true,
+    "iframeAllowForms": false,
+    "iframeAllowOrientationLock": false,
+    "iframeAllowPointerLock": false,
+    "iframeDisableUserActions": false,
+    "iframeDisableScrolling": false,
+    "iframeReferrerPolicy": "no-referrer",
+    "iframeUnloadWhenOffScreen": true,
+    "enableIframeCommunication": true,
+    "enableGetParams": false,
+    "enableGetUser": false,
+    "enableIframeFuncAddContent": false,
+    "enableSyncedStatus": false,
+    "enableIframeFuncBoardObjectContent": false,
+    "enableBackendProxy": true,
+    "incomingActions": [
+        {
+            "id": "test-todo-backend",
+            "label": "Test todo backend"
+        },
+        {
+            "id": "test-quote-backend",
+            "label": "Test quote backend"
+        },
+        {
+            "id": "test-weather-backend",
+            "label": "Test weather backend"
+        }
+    ],
+    "outgoingActions": [
+        {
+            "id": "onloaded",
+            "label": "Loaded"
+        },
+        {
+            "id": "backend-tested",
+            "label": "Backend tested",
+            "outputData": [
+                {
+                    "id": "backend",
+                    "label": "Backend",
+                    "type": "Text"
+                },
+                {
+                    "id": "success",
+                    "label": "Success",
+                    "type": "Boolean"
+                },
+                {
+                    "id": "durationMs",
+                    "label": "Duration milliseconds",
+                    "type": "Number"
+                },
+                {
+                    "id": "result",
+                    "label": "Result",
+                    "type": "Text"
+                }
+            ]
+        }
+    ],
+    "backgroundColor": "#051825",
+    "textColor": "#f9fff6",
+    "primaryColor": "#6da8ff",
+    "font": "",
+    "enabledColorPickers": {
+        "background": true,
+        "primary": true,
+        "text": true,
+        "font": false
+    },
+    "iframeAllowMicrophone": false,
+    "requiredAPIfunctions": [
+        "initialize",
+        "fetchProtectedUrlJSON",
+        "triggerAction",
+        "onIncomingAction"
+    ],
+    "version": "3.20260728",
+    "DefaultWidth": 620,
+    "DefaultHeight": 480
+}
+-->

@@ -1,137 +1,264 @@
-<!--
-  WIDGET SUMMARY
-  ==============
+<!-- WIDGETNAME:
+Synced Status
+-->
+<!-- WIDGETDESCRIPTION:
+A shared color swatch that stays in sync across every board instance using the Alleo synced-status API.
+-->
+<!-- WIDGETHELP:
+## What it does
 
-  An Alleo E-widget that stores a shared color in synced status so every
-  board viewer sees the same value.
+This widget stores a single shared color in the Alleo synced status, so every
+person viewing the board sees the same swatch at the same time. Tap **Randomize**
+to pick a new color; the change is written to synced status and instantly
+mirrored to all other instances.
 
-  Outgoing actions (triggered via alleo.triggerAction):
-    - onloaded ()   fired once after init
+## How to use it
 
-  Incoming actions (handled via alleo.onIncomingAction):
-    - none
+1. Enable **Enable Alleo board features** and **Enable synchronizing status** in
+   the widget settings.
+2. Tap **Randomize** to choose a new shared color.
+3. Open the same board in another window to watch both swatches update together.
 
-  Synced status:
-    - Writes { color: string } via alleo.setSyncedStatus on each click
-    - Reads the full status via alleo.onSyncedStatusUpdate
-    - Requests it on startup via alleo.requestSyncedStatus
+You can also drive the widget externally: send `set-color` with a `color`
+parameter (any CSS color) to set a specific color, or `reset` to return to the
+default.
 
-  ⚠ REQUIRED SETTINGS: "Enable Alleo board features for enclosed content"
-     and "Enable synchronizing status".
+## Settings
+
+Board editors can adjust the background and text colors from the widget settings.
+The synced-status key and default color live in the configuration section at the
+top of the file.
+
+## Notes
+
+The synced status is the single source of truth: the swatch always reflects the
+last value written by any instance, and newly opened instances render the shared
+color immediately on load.
 -->
 <!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Alleo E-widget — Synced status</title>
-    <!-- ═══════════════ Configuration ═══════════════ -->
-    <script>
-        /** User-tunable values. Edit these to customize the widget. */
-        const settings = {
-            /** @type {string} Key under which the color is stored in synced status. */
-            statusKey: 'color',
-            /** @type {string} Fallback button color used before any status arrives. */
-            defaultColor: '#dddddd',
-        }
-    </script>
-    <style>
-        body {
-            --font-family: Arial, sans-serif; /* widget font */
-            --button-text-color: #111;         /* button label color (CSS color) */
-        }
-    </style>
-    <!-- ═════════════ END Configuration ═════════════ -->
-    <style>
-        body {
-            font-family: var(--font-family);
-            padding: 16px;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Synced Status</title>
 
-        button {
-            padding: 8px 12px;
-            border: none;
-            color: var(--button-text-color);
-        }
-    </style>
-</head>
-<body>
-<EWidgetSDK/>
-<h1>Alleo E-widget — Synced status</h1>
-<p>Click the button to set a random color in synced status.</p>
+        <!-- =============== Configuration =============== -->
+        <script>
+            /** User-tunable values. Edit these to customize the widget. */
+            const settings = {
+                /** @type {string} Key under which the shared color is stored in synced status. */
+                statusKey: 'color',
+                /** @type {string} Fallback color used before any status arrives or after reset. */
+                defaultColor: '#6da8ff',
+                /** @type {string} Label shown on the randomize button. */
+                buttonLabel: 'Randomize',
+            }
+        </script>
+        <style>
+            body {
+                /* Defaults — alleo.initialize() overrides these with the configured theme. */
+                --alleo-background-color: #051825;
+                --alleo-text-color: #f9fff6;
+                --alleo-primary-color: #6da8ff;
+                --alleo-font: 'PT Root UI', Roboto, 'Helvetica Neue', 'Ubuntu Sans', Helvetica, Verdana, sans-serif;
 
-<button id="color">Set random color</button>
+                /** Fixed content width; contracts only when the iframe is narrower. */
+                --content-width: 420px;
+            }
+        </style>
+        <!-- ============= END Configuration ============= -->
 
-<script>
-    'use strict'
+        <style>
+            * {
+                box-sizing: border-box;
+            }
 
-    /**
-     * Stores a single shared color in synced status so every board viewer sees
-     * the same value. The synced status is the source of truth for the UI.
-     */
-    class SyncedColorWidget {
-        /* ═══════════════ Configuration ═══════════════ */
+            html,
+            body {
+                min-height: 100%;
+                margin: 0;
+            }
 
-        /** @type {string} Key under which the color is stored in synced status. */
-        statusKey = settings.statusKey
+            body {
+                display: grid;
+                place-items: center;
+                min-height: 100vh;
+                padding: 16px;
+                font-family: var(--alleo-font, sans-serif);
+                font-size: 16px;
+                background: var(--alleo-background-color);
+                color: var(--alleo-text-color);
+            }
 
-        /** @type {string} Fallback button color used before any status arrives. */
-        defaultColor = settings.defaultColor
+            .widget {
+                display: grid;
+                gap: 18px;
+                width: min(100%, var(--content-width));
+                justify-items: center;
+                text-align: center;
+            }
 
-        /* ═══════════════ End Configuration ═══════════════ */
+            h1 {
+                margin: 0;
+                font-size: 22px;
+                line-height: 1.25;
+            }
 
-        /**
-         * @param {object} alleo The Alleo SDK messenger (the global `alleo`).
-         */
-        constructor(alleo) {
-            /** @type {object} Alleo SDK messenger. */
-            this.alleo = alleo
-            /** @type {HTMLButtonElement} Button whose background reflects the shared color. */
-            this.button = document.getElementById('color')
-        }
+            .swatch {
+                width: 100%;
+                aspect-ratio: 3 / 2;
+                display: grid;
+                place-items: center;
+                font: 700 20px/1.2 var(--alleo-font, sans-serif);
+                color: #051825;
+                background: var(--swatch-color, var(--alleo-primary-color));
+            }
 
-        /**
-         * Subscribe to shared state, apply existing state, and announce readiness.
-         * @fires onloaded
-         */
-        init() {
-            this.alleo.onSyncedStatusUpdate((status) => this.applyStatus(status))
-            this.button.addEventListener('click', () => this.setRandomColor())
+            .value {
+                margin: 0;
+                font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+                color: color-mix(in srgb, var(--alleo-text-color) 76%, var(--alleo-background-color));
+            }
 
-            // Apply existing shared state before announcing readiness.
-            this.alleo.requestSyncedStatus()
-            this.alleo.triggerAction('onloaded')
-            console.log('SyncedColorWidget.init: ready')
-        }
+            button {
+                width: 100%;
+                min-height: 56px;
+                padding: 14px 20px;
+                border: 0;
+                cursor: pointer;
+                touch-action: manipulation;
+                font: 700 18px/1.2 var(--alleo-font, sans-serif);
+                background: var(--alleo-primary-color);
+                color: #051825;
+            }
 
-        /**
-         * Rebuild the UI from the received synced status.
-         * @param {Record<string, unknown>=} status Latest full shared state.
-         */
-        applyStatus(status) {
-            const color = status && status[this.statusKey] ? String(status[this.statusKey]) : this.defaultColor
-            this.button.style.backgroundColor = color
-            console.log('SyncedColorWidget.applyStatus:', color)
-        }
+            button:active {
+                background: color-mix(in srgb, var(--alleo-primary-color) 82%, var(--alleo-background-color));
+            }
+        </style>
+    </head>
+    <body>
+        <EWidgetSDK />
 
-        /**
-         * Pick a random color, update the shared state, and let the subscription
-         * redraw the button.
-         */
-        setRandomColor() {
-            const color = `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0')}`
-            this.alleo.setSyncedStatus({[this.statusKey]: color})
-            console.log('SyncedColorWidget.setRandomColor: wrote', color)
-        }
-    }
+        <main class="widget">
+            <h1>Synced color</h1>
+            <div class="swatch" id="swatch" aria-live="polite">Shared</div>
+            <p class="value" id="value">—</p>
+            <button type="button" id="randomize">Randomize</button>
+        </main>
 
-    new SyncedColorWidget(alleo).init()
-</script>
-</body>
+        <script>
+            /**
+             * Stores a single shared color in synced status so every board viewer
+             * sees the same value. The synced status is the source of truth.
+             */
+            class SyncedColorWidget {
+                /* =============== Configuration =============== */
+
+                /** @type {string} Key under which the shared color is stored. */
+                statusKey = settings.statusKey
+
+                /** @type {string} Fallback color used before status arrives or after reset. */
+                defaultColor = settings.defaultColor
+
+                /** @type {string} Label shown on the randomize button. */
+                buttonLabel = settings.buttonLabel
+
+                /* =============== End Configuration =============== */
+
+                /**
+                 * Stores DOM references used by the controller.
+                 * @param {HTMLElement} swatch Swatch element whose background reflects the color.
+                 * @param {HTMLElement} valueElement Element showing the color value.
+                 * @param {HTMLButtonElement} button Randomize button.
+                 */
+                constructor(swatch, valueElement, button) {
+                    /** @type {HTMLElement} Swatch element. */
+                    this.swatch = swatch
+                    /** @type {HTMLElement} Element showing the color value. */
+                    this.valueElement = valueElement
+                    /** @type {HTMLButtonElement} Randomize button. */
+                    this.button = button
+                }
+
+                /**
+                 * Subscribes to shared state, wires events, and initializes the SDK
+                 * so the initial synced color is applied before onloaded fires.
+                 */
+                async start() {
+                    this.button.textContent = this.buttonLabel
+                    alleo.onSyncedStatusUpdate((status) => this.applyStatus(status))
+                    alleo.onIncomingAction((payload) => this.handleIncomingAction(payload))
+                    this.button.addEventListener('click', () => this.setColor(this.randomColor()))
+                    await alleo.initialize()
+                    console.log('[SyncedColorWidget.start] Widget initialized')
+                }
+
+                /**
+                 * Rebuilds the UI from the received synced status.
+                 * @param {Record<string, unknown>} [status] Latest full shared state.
+                 */
+                applyStatus(status) {
+                    const color = status && status[this.statusKey] ? String(status[this.statusKey]) : this.defaultColor
+                    this.swatch.style.setProperty('--swatch-color', color)
+                    this.valueElement.textContent = color
+                    console.log('[SyncedColorWidget.applyStatus]', color)
+                }
+
+                /**
+                 * Handles incoming set-color and reset actions.
+                 * @param {{ actionId?: string, data?: Record<string, unknown> }} payload Incoming payload.
+                 */
+                handleIncomingAction(payload) {
+                    if (payload?.actionId === 'reset') {
+                        this.setColor(this.defaultColor)
+                        return
+                    }
+                    if (payload?.actionId === 'set-color') {
+                        const color = payload.data?.color
+                        if (typeof color === 'string' && color.trim()) this.setColor(color.trim())
+                    }
+                }
+
+                /**
+                 * Writes a color to the shared state and fires the change action.
+                 * The subscription redraws the UI from the synced status.
+                 * @param {string} color CSS color to store.
+                 */
+                setColor(color) {
+                    alleo.setSyncedStatus({ [this.statusKey]: color })
+                    alleo.triggerAction('color-changed', { color })
+                    console.log('[SyncedColorWidget.setColor] wrote', color)
+                }
+
+                /**
+                 * @returns {string} A random hex color string.
+                 */
+                randomColor() {
+                    return `#${Math.floor(Math.random() * 0xffffff)
+                        .toString(16)
+                        .padStart(6, '0')}`
+                }
+            }
+
+            /** @type {HTMLElement} Swatch element. */
+            const swatch = document.getElementById('swatch')
+
+            /** @type {HTMLElement} Color value element. */
+            const valueElement = document.getElementById('value')
+
+            /** @type {HTMLButtonElement} Randomize button. */
+            const button = document.getElementById('randomize')
+
+            /** @type {SyncedColorWidget} Active widget controller. */
+            const syncedColorWidget = new SyncedColorWidget(swatch, valueElement, button)
+
+            void syncedColorWidget.start()
+        </script>
+    </body>
 </html>
 
-<!--
-WIDGETSETTINGS:
+<!-- WIDGETSETTINGS:
 {
     "iframeAllowScripts": true,
     "iframeAllowForms": false,
@@ -142,14 +269,41 @@ WIDGETSETTINGS:
     "iframeReferrerPolicy": "no-referrer",
     "iframeUnloadWhenOffScreen": true,
     "enableIframeCommunication": true,
+    "enableGetParams": false,
+    "enableGetUser": false,
     "enableIframeFuncAddContent": false,
     "enableSyncedStatus": true,
     "enableIframeFuncBoardObjectContent": false,
-    "incomingActions": [],
-    "outgoingActions": [],
-    "backgroundColor": "#FFFFFF",
-    "overwriteTextColor": false,
-    "textColor": "",
-    "iframeAllowMicrophone": false
+    "enableBackendProxy": false,
+    "incomingActions": [
+        {
+            "id": "set-color",
+            "label": "Set color",
+            "inputData": [
+                { "id": "color", "label": "Color", "type": "Text" }
+            ]
+        },
+        { "id": "reset", "label": "Reset" }
+    ],
+    "outgoingActions": [
+        { "id": "onloaded", "label": "Loaded" },
+        {
+            "id": "color-changed",
+            "label": "Color changed",
+            "outputData": [
+                { "id": "color", "label": "Color", "type": "Text" }
+            ]
+        }
+    ],
+    "backgroundColor": "#051825",
+    "textColor": "#f9fff6",
+    "primaryColor": "#6da8ff",
+    "font": "",
+    "enabledColorPickers": { "background": true, "primary": true, "text": true, "font": false },
+    "iframeAllowMicrophone": false,
+    "requiredAPIfunctions": ["initialize", "setSyncedStatus", "onSyncedStatusUpdate", "triggerAction", "onIncomingAction"],
+    "version": "1.20260728",
+    "DefaultWidth": 480,
+    "DefaultHeight": 560
 }
 -->
