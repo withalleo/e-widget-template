@@ -18,7 +18,8 @@ task and all coding rules.**
    built, your assumptions, the actions, and the widget settings the user must
    enable.
 
-If `idea.txt` is empty, stop and ask the user to fill it in.
+If `idea.txt` is empty, stop and ask the user to fill it in (they can copy
+`idea.sample.txt` as a starting point).
 
 Reference docs are indexed in [`docs/README.md`](./docs/README.md): authoring
 docs (SDK manual, types) live in [`docs/`](./docs), and user-facing advice about

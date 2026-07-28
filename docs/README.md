@@ -33,5 +33,6 @@ Files in [`reference/`](./reference) describe the **E-widget** — the host that
 ## Runnable examples
 
 See [`../samples/`](../samples) for minimal, working widgets covering each SDK capability (basic actions, synced status,
-add-content, board-object content, mic). Each is a ready-to-import `*.Alleo-eWidget.txt` file: a complete HTML document
+add-content, board-object content, microphone, URL parameters, current-user profile, and protected internet fetches —
+both public and authenticated). Each is a ready-to-import `*.Alleo-eWidget.txt` file: a complete HTML document
 followed by a matching `WIDGETSETTINGS:` footer.

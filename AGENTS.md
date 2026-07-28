@@ -30,8 +30,8 @@ GitHub Copilot, etc.) working in this repository.
    features the user must enable, and the default widget size.
 
 If `idea.txt` is empty or missing, do not invent a random widget — stop and tell
-the user to fill in `idea.txt` first (or ask them what to build if running
-interactively).
+the user to fill in `idea.txt` first (they can copy `idea.sample.txt` as a
+starting point), or ask them what to build if running interactively.
 
 ---
 

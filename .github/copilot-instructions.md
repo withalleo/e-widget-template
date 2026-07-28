@@ -15,7 +15,8 @@ source of truth for the task and all coding rules.** Follow it exactly.
    picker expects `.txt`). See `docs/IMPORT-FOOTER.md` for the footer.
 4. Write a build note to `dist/<widget-name>.README.md`.
 
-If `idea.txt` is empty, stop and ask the user to fill it in.
+If `idea.txt` is empty, stop and ask the user to fill it in (they can copy
+`idea.sample.txt` as a starting point).
 
 ## Key rules (see `AGENTS.md` for the full list)
 

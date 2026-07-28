@@ -9,7 +9,9 @@ board through the `alleo` SDK.
 
 ## How it works
 
-1. **Describe your widget** in [`idea.txt`](./idea.txt) in plain language.
+1. **Describe your widget** in [`idea.txt`](./idea.txt) in plain language. Not
+   sure how to phrase it? Copy from the worked example in
+   [`idea.sample.txt`](./idea.sample.txt).
 2. **Ask your AI agent to build it.** The agent reads `idea.txt`, follows the
    rules in [`AGENTS.md`](./AGENTS.md), and generates the widget.
 3. **Collect the output** from [`dist/`](./dist):
@@ -29,7 +31,7 @@ board through the `alleo` SDK.
 
 ```text
 1. Use this template to create your own repo (green "Use this template" button).
-2. Edit idea.txt with your widget idea.
+2. Edit idea.txt with your widget idea (see idea.sample.txt for an example).
 3. Run your agent of choice in the repo:
      • Codex / generic agents → read AGENTS.md
      • Claude Code            → read CLAUDE.md
@@ -42,6 +44,7 @@ board through the `alleo` SDK.
 | Path                              | Purpose                                                                      |
 |-----------------------------------|------------------------------------------------------------------------------|
 | `idea.txt`                        | **You edit this.** Describes the widget to build.                            |
+| `idea.sample.txt`                 | A filled-in example you can copy into `idea.txt` to get started.             |
 | `AGENTS.md`                       | The single source of truth: the task + all coding rules for agents.          |
 | `CLAUDE.md`                       | Pointer to `AGENTS.md` for Claude Code.                                      |
 | `.github/copilot-instructions.md` | Pointer to `AGENTS.md` for GitHub Copilot.                                   |
