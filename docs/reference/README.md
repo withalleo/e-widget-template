@@ -10,25 +10,24 @@
 
 ## Documentation
 
-> [Help for users](./help.md) - opens using the Help button
+> [Help for users](./HELP.md) - opens using the Help button
 
-- [AI-INSTRUCTIONS](./AI-INSTRUCTIONS.md)
-- [AI-USER-COMMUNICATION](./AI-USER-COMMUNICATION.md)
-- [IMPORT-FOOTER](./IMPORT-FOOTER.md)
-- [LIBRARY](./LIBRARY.md)
+- [AI-INSTRUCTIONS](../AI-INSTRUCTIONS.md)
+- [IMPORT-FOOTER](../IMPORT-FOOTER.md)
+- [LIBRARY](../LIBRARY.md)
 - [SECURITY](./SECURITY.md)
 - [TRACKED-EVENTS](./TRACKED-EVENTS.md)
 
 ## Information
 
-| []()         | []()                               |
-| ------------ | ---------------------------------- |
-| Icon         | ![Icon](.././assets/icon-beta.png) |
-| Version      | `1.0.79`                           |
-| Widget id    | `embed-browser`                    |
-| Author       | [Alleo](https://www.withalleo.com) |
-| Publisher id | `com.withalleo`                    |
-| Default size | 1280 x 720                         |
+| []()         | []()                                                                                    |
+|--------------|-----------------------------------------------------------------------------------------|
+| Icon         | ![Icon](https://widgets.withalleo.com/com.withalleo/embed-browser/assets/icon-beta.png) |
+| Version      | `1.0.79`                                                                                |
+| Widget id    | `embed-browser`                                                                         |
+| Author       | [Alleo](https://www.withalleo.com)                                                      |
+| Publisher id | `com.withalleo`                                                                         |
+| Default size | 1280 x 720                                                                              |
 
 ## Settings
 

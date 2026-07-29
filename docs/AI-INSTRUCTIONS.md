@@ -17,7 +17,7 @@ You are generating HTML content that will be loaded inside an **Alleo E-widget**
 
 ## Required knowledge before generating
 
-**Do not write any HTML until the items below are resolved.** Some of these might change based on the user's request (see [AI-USER-COMMUNICATION.md](./AI-USER-COMMUNICATION.md) for how to ask).
+**Do not write any HTML until the items below are resolved.** Some of these might change based on the user's request).
 
 | Knowledge needed       | Question it answers                                                                                            | Assumed default                   | Resolve how                   |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------- | ----------------------------- |
@@ -75,7 +75,7 @@ You may also define your own CSS variables in the configuration section for widg
 
 ### Color & font pickers
 
-Deciding whether to expose color/font pickers for a widget is **part of your job when generating the widget** - do not ask the user about it as a clarification question; decide it yourself based on the design and mention your decision in the e-widget plan (see [AI-USER-COMMUNICATION.md](./AI-USER-COMMUNICATION.md)).
+Deciding whether to expose color/font pickers for a widget is **part of your job when generating the widget** - do not ask the user about it as a clarification question; decide it yourself based on the design and mention your decision in the e-widget plan.
 
 Each of the 4 theme values can independently get its own picker, shown in Alleo's own widget settings panel (separate from anything in your HTML) via the footer's `enabledColorPickers` object (see [Importable settings footer](#importable-settings-footer)):
 
