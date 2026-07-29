@@ -6,7 +6,8 @@
 
 # E-widget - _Alleo widget_
 
-(beta) Create a custom widget using common HTML code. Display your content with complete flexibility, create interactive, dynamic experiences tailored exactly to your needs.
+(beta) Create a custom widget using common HTML code. Display your content with complete flexibility, create
+interactive, dynamic experiences tailored exactly to your needs.
 
 ## Documentation
 
@@ -253,15 +254,15 @@ Default in configuration:
 
 ```json
 {
-    "triggerAction": 50,
-    "addContent": 20,
-    "requestSyncedStatus": 20,
-    "setSyncedStatus": 50,
-    "getBoardObjectContent": 50,
-    "replaceBoardObjectContent": 20,
-    "appendBoardObjectContent": 20,
-    "micStart": 20,
-    "micStop": 20
+  "triggerAction": 50,
+  "addContent": 20,
+  "requestSyncedStatus": 20,
+  "setSyncedStatus": 50,
+  "getBoardObjectContent": 50,
+  "replaceBoardObjectContent": 20,
+  "appendBoardObjectContent": 20,
+  "micStart": 20,
+  "micStop": 20
 }
 ```
 
@@ -279,21 +280,21 @@ Default in configuration:
 
 ```json
 {
-    "CorsProxy": {
-        "DisplayName": "Alleo CORS Proxy",
-        "PrivacyPolicyUrl": "https://www.withalleo.com/privacy-policy",
-        "EnableUI": false,
-        "DefaultScope": "deployment",
-        "UseOrganizationKeyOverDeploymentKey": true,
-        "EnableChangingScope": true,
-        "DeploymentSharedSecretId": "CorsProxy",
-        "OrganizationSharedSecretId": "CorsProxy",
-        "AllowDeploymentSharedSecret": true,
-        "AllowOrganizationSharedSecret": true,
-        "AllowCustomDeploymentSharedSecret": false,
-        "AllowCustomOrganizationSharedSecret": false,
-        "AllowCustomApiConnection": false
-    }
+  "CorsProxy": {
+    "DisplayName": "Alleo CORS Proxy",
+    "PrivacyPolicyUrl": "https://www.withalleo.com/privacy-policy",
+    "EnableUI": false,
+    "DefaultScope": "deployment",
+    "UseOrganizationKeyOverDeploymentKey": true,
+    "EnableChangingScope": true,
+    "DeploymentSharedSecretId": "CorsProxy",
+    "OrganizationSharedSecretId": "CorsProxy",
+    "AllowDeploymentSharedSecret": true,
+    "AllowOrganizationSharedSecret": true,
+    "AllowCustomDeploymentSharedSecret": false,
+    "AllowCustomOrganizationSharedSecret": false,
+    "AllowCustomApiConnection": false
+  }
 }
 ```
 
@@ -487,7 +488,7 @@ Default in configuration:
 
 ### 1.0.67
 
-- embed browser: make alleo.initialize() async and automatically handle the onloaded trigger.
+- embed browser: make alleo.initialize () async and automatically handle the onloaded trigger.
 - embed browser: clarify API library code structure and description
 
 ### 1.0.68

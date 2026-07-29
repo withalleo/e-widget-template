@@ -133,7 +133,7 @@ Only the following keys may appear in the footer JSON. Use the exact key names, 
 
 | Key                    | Type       | Default | Meaning                                                                                                                                                                                                                                                                                                   |
 | ---------------------- | ---------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `requiredAPIfunctions` | `string[]` | `[]`    | Every `alleo.*` function the HTML actually calls, listed **without** the `alleo.` prefix (e.g. `["initialize", "triggerAction", "onIncomingAction", "fetchProtectedUrlJSON"]`). List each function once even if called multiple times. Keep it in sync with the HTML whenever a call is added or removed. |
+| `requiredAPIfunctions` | `string[]` | `[]`    | Every `alleo.*` endpoint the HTML actually uses, listed **without** the `alleo.` prefix - this includes function calls **and** property reads like `alleo.getParams`/`alleo.user`, not just functions (e.g. `["initialize", "triggerAction", "onIncomingAction", "fetchProtectedUrlJSON", "getParams", "user"]`). List each name once even if used multiple times. Keep it in sync with the HTML whenever a reference is added or removed. |
 
 ### Protected backend connections
 
@@ -331,7 +331,7 @@ The footer is not decoration - it must reflect what the HTML code actually does.
 12. **Color/font pickers:** set `enabledColorPickers` to the background/primary/text/font pickers you decided to expose in Alleo's own settings panel - this is a decision you make while designing the widget (see `AI-INSTRUCTIONS.md`), not something mechanically derived from the HTML.
 13. **Size:** set `DefaultWidth`/`DefaultHeight` to the fixed pixel size you designed for (both positive numbers, default `1280`×`720`), or omit both to keep the user's current size.
 14. **Version:** set `version` to `<version>.YYYYMMDD` - start `<version>` at `1` for a new widget and increment it on every modification; set `YYYYMMDD` to today's date every time you modify the widget (it tracks the most recent change, not the original creation date).
-15. **Required API functions:** collect every distinct `alleo.<function>` call found anywhere in the HTML (from steps 2–10 above and any others, e.g. `alleo.initialize`) into `requiredAPIfunctions`, listing each function name once, without the `alleo.` prefix.
+15. **Required API functions:** collect every distinct `alleo.*` reference found anywhere in the HTML (from steps 2–10 above and any others, e.g. `alleo.initialize`) into `requiredAPIfunctions`, listing each name once, without the `alleo.` prefix. This includes property reads such as `alleo.getParams` and `alleo.user`, not just function calls.
 
 If a capability is **not** used by the HTML, **still include its key** in the footer and set it to its "off" value (`false` / `[]` / empty) - see the _Required keys_ table. Do not omit it, and do not enable permissions the widget does not need.
 
@@ -352,7 +352,7 @@ If a capability is **not** used by the HTML, **still include its key** in the fo
 - [ ] Every `outgoingActions` / `incomingActions` `id` and parameter `id` exactly matches the HTML.
 - [ ] Each feature flag (`enableSyncedStatus`, `enableIframeFuncAddContent`, `enableIframeFuncBoardObjectContent`, `iframeAllowMicrophone`, `enableGetParams`, `enableGetUser`) is `true` only when the HTML actually uses that feature, and `false` otherwise.
 - [ ] `onloaded` **is** added to `outgoingActions` (`{ "id": "onloaded", "label": "Loaded" }`, no `outputData`).
-- [ ] `requiredAPIfunctions` lists every `alleo.*` function actually called in the HTML (without the `alleo.` prefix), with no unused entries.
+- [ ] `requiredAPIfunctions` lists every `alleo.*` endpoint actually used in the HTML (without the `alleo.` prefix) - including property reads like `getParams`/`user`, not just function calls - with no unused entries.
 
 ---
 
@@ -363,7 +363,7 @@ A button widget that fires `submit` (with a `label` string) and accepts an incom
 ```html
 <!doctype html>
 <html lang="en">
-    <!-- ... full self-contained widget HTML per AI-INSTRUCTIONS.md ... -->
+<!-- ... full self-contained widget HTML per AI-INSTRUCTIONS.md ... -->
 </html>
 
 <!--

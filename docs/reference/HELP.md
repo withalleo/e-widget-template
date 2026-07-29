@@ -233,7 +233,7 @@ The values are captured once and remain fixed for the widget's lifetime, even if
 
 ### Reading the current user
 
-Enable **Allow access to the current user profile** (under **Security**) to expose the profile of the logged-in board user to your embedded content - useful for personalising the widget or pre-filling a name/email. The profile is read-only and captured once during `alleo.initialize()`.
+Enable **Allow access to the current user profile** (under **Security**) to expose the profile of the logged-in board user to your embedded content - useful for personalizing the widget or pre-filling a name/email. The profile is read-only and captured once during `alleo.initialize()`.
 
 ```js
 alleo.initialize()
