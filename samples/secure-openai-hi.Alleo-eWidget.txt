@@ -1,0 +1,590 @@
+<!-- WIDGETNAME:
+Secure OpenAI Hi
+-->
+<!-- WIDGETDESCRIPTION:
+A one-button demo that securely asks OpenAI to reply to “Hi!” through Alleo’s protected backend proxy.
+-->
+<!-- WIDGETHELP:
+## What it does
+
+This widget demonstrates secure API access from an Alleo E-widget. Press **Say “Hi!”** and the widget sends a small request to OpenAI through Alleo’s protected backend proxy, then displays the returned greeting. The OpenAI API key is never stored in this HTML file and is never exposed to the iframe.
+
+## How to use it
+
+1. Import this file as an Alleo E-widget.
+2. Open the widget’s context menu and choose **Configure External Connection `openaiApi`**.
+3. Enter an OpenAI API key with access to the configured model.
+4. Press **Say “Hi!”** to send the request and display the response.
+
+The incoming `say-hi` action can also start the request from another board object or automation.
+
+## Settings and limitations
+
+Board editors can adjust the background, primary, and text colors from the widget settings. The demo requires Alleo Online, internet access, protected-backend support, and a valid OpenAI API key. It does not work in offline or on-premise deployments that lack the protected backend proxy. The response is kept only in the current widget instance and is not synchronized across viewers.
+-->
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Secure OpenAI Hi</title>
+
+        <!-- =============== Configuration =============== -->
+        <script>
+            const settings = {
+                /** @type {string} Protected backend connection ID configured in the import footer. */
+                backendKeyId: 'openaiApi',
+                /** @type {string} Exact OpenAI Responses API endpoint allowed by the protected backend. */
+                endpointUrl: 'https://api.openai.com/v1/responses',
+                /** @type {string} OpenAI model used for this lightweight greeting request. */
+                model: 'gpt-5-mini',
+                /** @type {string} User input sent to the model when the demo runs. */
+                prompt: 'Hi!',
+                /** @type {string} Instruction that keeps the demonstration response short and friendly. */
+                instructions: 'Reply with one short, friendly greeting sentence.',
+                /** @type {number} Maximum number of output tokens permitted for the greeting. */
+                maxOutputTokens: 120,
+                /** @type {string} Label shown on the primary action button. */
+                buttonLabel: 'Say “Hi!”',
+                /** @type {string} Message shown before the first request. */
+                idleMessage: 'Press the button to contact OpenAI securely.',
+                /** @type {string} Message shown while the protected request is running. */
+                loadingMessage: 'Contacting AI through the protected proxy…',
+                /** @type {string} Outgoing action fired when a user starts the request. */
+                requestedActionId: 'ai-requested',
+                /** @type {string} Outgoing action fired after a successful response. */
+                respondedActionId: 'ai-responded',
+                /** @type {string} Outgoing action fired when the protected request fails. */
+                failedActionId: 'ai-request-failed',
+                /** @type {string} Incoming action that starts the same greeting request. */
+                incomingActionId: 'say-hi',
+            }
+        </script>
+        <style>
+            body {
+                /* Defaults overridden by alleo.initialize() with the widget's configured theme. */
+                --alleo-background-color: #051825;
+                --alleo-text-color: #f9fff6;
+                --alleo-primary-color: #6da8ff;
+                --alleo-font: 'PT Root UI', Roboto, 'Helvetica Neue', 'Ubuntu Sans', Helvetica, Verdana, sans-serif;
+
+                /* Fixed content width; it only contracts when the iframe is narrower. */
+                --content-width: 480px;
+                /* Touch-friendly control height in pixels. */
+                --control-height: 52px;
+            }
+        </style>
+        <!-- ============= END Configuration ============= -->
+
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                min-width: 0;
+                min-height: 100%;
+                margin: 0;
+            }
+
+            body {
+                display: grid;
+                place-items: center;
+                min-height: 100vh;
+                padding: 16px;
+                overflow: auto;
+                font-family: var(--alleo-font, sans-serif);
+                font-size: 16px;
+                line-height: 1.45;
+                background: var(--alleo-background-color);
+                color: var(--alleo-text-color);
+            }
+
+            .widget {
+                display: grid;
+                gap: 16px;
+                width: var(--content-width);
+                max-width: 100%;
+            }
+
+            .widget__heading {
+                display: grid;
+                gap: 6px;
+            }
+
+            h1,
+            p {
+                margin: 0;
+            }
+
+            h1 {
+                font-size: 24px;
+                line-height: 1.2;
+                font-weight: 700;
+            }
+
+            .widget__description {
+                color: color-mix(in srgb, var(--alleo-text-color) 78%, transparent);
+            }
+
+            .widget__button {
+                min-height: var(--control-height);
+                padding: 12px 20px;
+                border: 0;
+                border-radius: 0;
+                cursor: pointer;
+                touch-action: manipulation;
+                font: 700 17px/1.2 var(--alleo-font, sans-serif);
+                background: var(--alleo-primary-color);
+                color: var(--alleo-text-color);
+            }
+
+            .widget__button:hover:not(:disabled) {
+                background: color-mix(in srgb, var(--alleo-primary-color) 86%, var(--alleo-text-color));
+            }
+
+            .widget__button:active:not(:disabled) {
+                background: color-mix(in srgb, var(--alleo-primary-color) 82%, var(--alleo-background-color));
+            }
+
+            .widget__button:focus-visible {
+                outline: 3px solid color-mix(in srgb, var(--alleo-primary-color) 70%, var(--alleo-text-color));
+                outline-offset: 3px;
+            }
+
+            .widget__button:disabled {
+                cursor: progress;
+                opacity: 0.7;
+            }
+
+            .widget__response {
+                min-height: 92px;
+                padding: 14px 16px;
+                border-left: 4px solid var(--alleo-primary-color);
+                overflow-wrap: anywhere;
+                background: color-mix(in srgb, var(--alleo-background-color) 90%, var(--alleo-text-color));
+            }
+
+            .widget__response[data-state='error'] {
+                border-left-color: color-mix(in srgb, var(--alleo-primary-color) 45%, var(--alleo-text-color));
+            }
+
+            @media (max-width: 360px) {
+                body {
+                    padding: 12px;
+                }
+
+                h1 {
+                    font-size: 21px;
+                }
+            }
+
+            @media (prefers-reduced-motion: no-preference) {
+                .widget__button {
+                    transition:
+                        background-color 120ms ease,
+                        opacity 120ms ease;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <EWidgetSDK />
+
+        <main class="widget" aria-labelledby="widget-title">
+            <header class="widget__heading">
+                <h1 id="widget-title">Secure OpenAI demo</h1>
+                <p class="widget__description">The credential stays behind Alleo’s protected backend proxy.</p>
+            </header>
+
+            <button id="say-hi-button" class="widget__button" type="button">Say “Hi!”</button>
+
+            <section
+                id="ai-response"
+                class="widget__response"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                data-state="idle"
+            >
+                Press the button to contact OpenAI securely.
+            </section>
+        </main>
+
+        <script>
+            /**
+             * Runs a minimal OpenAI greeting demo through Alleo's protected backend proxy.
+             */
+            class SecureHiWidget {
+                /* =============== Configuration =============== */
+
+                /** Protected backend connection ID used by the proxy request. */
+                backendKeyId = settings.backendKeyId
+
+                /** Exact OpenAI API endpoint called by this widget. */
+                endpointUrl = settings.endpointUrl
+
+                /** OpenAI model used for the request. */
+                model = settings.model
+
+                /** Prompt sent to OpenAI. */
+                prompt = settings.prompt
+
+                /** Instruction used to constrain the greeting response. */
+                instructions = settings.instructions
+
+                /** Maximum output-token allowance for a response. */
+                maxOutputTokens = settings.maxOutputTokens
+
+                /** Text shown on the primary action button. */
+                buttonLabel = settings.buttonLabel
+
+                /** Text shown before any request has been made. */
+                idleMessage = settings.idleMessage
+
+                /** Text shown while a request is running. */
+                loadingMessage = settings.loadingMessage
+
+                /** Outgoing action ID for a user-started request. */
+                requestedActionId = settings.requestedActionId
+
+                /** Outgoing action ID for a successful response. */
+                respondedActionId = settings.respondedActionId
+
+                /** Outgoing action ID for a failed response. */
+                failedActionId = settings.failedActionId
+
+                /** Incoming action ID that starts a greeting request. */
+                incomingActionId = settings.incomingActionId
+
+                /* =============== End Configuration =============== */
+
+                /**
+                 * Creates the widget controller and stores its required DOM elements.
+                 * @param {HTMLButtonElement} buttonElement Primary action button.
+                 * @param {HTMLElement} responseElement Live response display.
+                 */
+                constructor(buttonElement, responseElement) {
+                    /** @type {HTMLButtonElement} Primary control used to start a request. */
+                    this.button = buttonElement
+
+                    /** @type {HTMLElement} Live region that displays status, responses, and errors. */
+                    this.response = responseElement
+
+                    /** @type {boolean} Prevents overlapping protected backend requests. */
+                    this.isRequestPending = false
+
+                    /** @type {null | (() => void)} Unsubscribes the incoming-action listener if needed. */
+                    this.unsubscribeIncomingAction = null
+                }
+
+                /**
+                 * Binds all controls, registers board integrations, and initializes the Alleo SDK.
+                 */
+                async start() {
+                    this.bindEvents()
+                    this.bindIncomingActions()
+                    this.renderIdle()
+                    await alleo.initialize()
+                    console.log('[SecureHiWidget.start] Widget initialized')
+                }
+
+                /**
+                 * Connects touch and click interaction to the greeting request.
+                 */
+                bindEvents() {
+                    this.button.addEventListener('click', () => this.handleButtonClick())
+                }
+
+                /**
+                 * Registers the incoming action that can start the demo externally.
+                 */
+                bindIncomingActions() {
+                    this.unsubscribeIncomingAction = alleo.onIncomingAction((payload) => {
+                        this.handleIncomingAction(payload)
+                    })
+                }
+
+                /**
+                 * Handles a user pressing the primary action button.
+                 */
+                handleButtonClick() {
+                    console.log('[SecureHiWidget.handleButtonClick] User requested a greeting')
+                    alleo.triggerAction(this.requestedActionId, { prompt: this.prompt })
+                    void this.requestGreeting('user')
+                }
+
+                /**
+                 * Handles commands sent from Alleo board objects or automations.
+                 * @param {{ actionId?: string, data?: Record<string, unknown> }} payload Incoming action payload.
+                 */
+                handleIncomingAction(payload) {
+                    if (payload?.actionId !== this.incomingActionId) return
+                    console.log('[SecureHiWidget.handleIncomingAction] Incoming say-hi action received')
+                    void this.requestGreeting('incoming-action')
+                }
+
+                /**
+                 * Calls OpenAI through the protected proxy and renders the result.
+                 * @param {'user' | 'incoming-action'} source Origin of the request.
+                 */
+                async requestGreeting(source) {
+                    if (this.isRequestPending) {
+                        console.warn(`[SecureHiWidget.requestGreeting] Ignored overlapping request from ${source}`)
+                        return
+                    }
+
+                    this.isRequestPending = true
+                    this.renderLoading()
+
+                    try {
+                        const responsePayload = await alleo.fetchProtectedUrlJSON(
+                            this.backendKeyId,
+                            this.endpointUrl,
+                            {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(this.buildRequestBody()),
+                            },
+                        )
+
+                        const apiError = this.extractApiError(responsePayload)
+                        if (apiError) throw new Error(apiError)
+
+                        const responseText = this.extractResponseText(responsePayload)
+                        if (!responseText) throw new Error('OpenAI returned no text response.')
+
+                        this.renderResponse(responseText)
+                        alleo.triggerAction(this.respondedActionId, { response: responseText })
+                        console.log('[SecureHiWidget.requestGreeting] Greeting received')
+                    } catch (error) {
+                        const errorMessage = this.getErrorMessage(error)
+                        this.renderError(errorMessage)
+                        alleo.triggerAction(this.failedActionId, { error: errorMessage })
+                        console.error('[SecureHiWidget.requestGreeting] Protected request failed:', error)
+                    } finally {
+                        this.isRequestPending = false
+                        this.button.disabled = false
+                        this.button.removeAttribute('aria-busy')
+                    }
+                }
+
+                /**
+                 * Builds the JSON body accepted by the OpenAI Responses API.
+                 * @returns {Record<string, unknown>} Request body for the protected API call.
+                 */
+                buildRequestBody() {
+                    return {
+                        model: this.model,
+                        instructions: this.instructions,
+                        input: this.prompt,
+                        max_output_tokens: this.maxOutputTokens,
+                        store: false,
+                    }
+                }
+
+                /**
+                 * Extracts an API error message from a successful JSON transport response.
+                 * @param {unknown} payload Parsed API response.
+                 * @returns {string} API error text, or an empty string when none is present.
+                 */
+                extractApiError(payload) {
+                    if (!payload || typeof payload !== 'object') return ''
+                    const errorValue = payload.error
+                    if (!errorValue || typeof errorValue !== 'object') return ''
+                    return typeof errorValue.message === 'string' ? errorValue.message.trim() : ''
+                }
+
+                /**
+                 * Extracts assistant text from a Responses API payload without trusting HTML.
+                 * @param {unknown} payload Parsed API response.
+                 * @returns {string} Combined assistant output text.
+                 */
+                extractResponseText(payload) {
+                    if (!payload || typeof payload !== 'object') return ''
+
+                    if (typeof payload.output_text === 'string' && payload.output_text.trim()) {
+                        return payload.output_text.trim()
+                    }
+
+                    if (!Array.isArray(payload.output)) return ''
+
+                    const textParts = []
+                    for (const outputItem of payload.output) {
+                        if (!outputItem || !Array.isArray(outputItem.content)) continue
+
+                        for (const contentItem of outputItem.content) {
+                            if (contentItem?.type !== 'output_text') continue
+                            if (typeof contentItem.text !== 'string') continue
+
+                            const text = contentItem.text.trim()
+                            if (text) textParts.push(text)
+                        }
+                    }
+
+                    return textParts.join('\n').trim()
+                }
+
+                /**
+                 * Converts any thrown value into a concise message suitable for the widget.
+                 * @param {unknown} error Thrown request error.
+                 * @returns {string} Human-readable failure message.
+                 */
+                getErrorMessage(error) {
+                    if (error instanceof Error && error.message.trim()) return error.message.trim()
+                    if (typeof error === 'string' && error.trim()) return error.trim()
+                    return 'The protected OpenAI request failed.'
+                }
+
+                /**
+                 * Restores the initial prompt and interactive button state.
+                 */
+                renderIdle() {
+                    this.button.textContent = this.buttonLabel
+                    this.button.disabled = false
+                    this.response.dataset.state = 'idle'
+                    this.response.textContent = this.idleMessage
+                }
+
+                /**
+                 * Shows progress and prevents duplicate requests.
+                 */
+                renderLoading() {
+                    this.button.disabled = true
+                    this.button.setAttribute('aria-busy', 'true')
+                    this.response.dataset.state = 'loading'
+                    this.response.textContent = this.loadingMessage
+                }
+
+                /**
+                 * Displays a successful assistant response.
+                 * @param {string} responseText Plain-text assistant output.
+                 */
+                renderResponse(responseText) {
+                    this.response.dataset.state = 'success'
+                    this.response.textContent = responseText
+                }
+
+                /**
+                 * Displays a protected request failure.
+                 * @param {string} errorMessage Human-readable error message.
+                 */
+                renderError(errorMessage) {
+                    this.response.dataset.state = 'error'
+                    this.response.textContent = `Request failed: ${errorMessage}`
+                }
+            }
+
+            /** @type {HTMLButtonElement} Primary button element required by the widget controller. */
+            const sayHiButton = document.getElementById('say-hi-button')
+
+            /** @type {HTMLElement} Response display element required by the widget controller. */
+            const aiResponse = document.getElementById('ai-response')
+
+            /** @type {SecureHiWidget} Active widget controller instance. */
+            const secureHiWidget = new SecureHiWidget(sayHiButton, aiResponse)
+
+            void secureHiWidget.start()
+        </script>
+    </body>
+</html>
+
+<!-- WIDGETSETTINGS:
+{
+    "iframeAllowScripts": true,
+    "iframeAllowForms": false,
+    "iframeAllowOrientationLock": false,
+    "iframeAllowPointerLock": false,
+    "iframeDisableUserActions": false,
+    "iframeDisableScrolling": false,
+    "iframeReferrerPolicy": "no-referrer",
+    "iframeUnloadWhenOffScreen": true,
+    "enableIframeCommunication": true,
+    "enableGetParams": false,
+    "enableGetUser": false,
+    "enableIframeFuncAddContent": false,
+    "enableSyncedStatus": false,
+    "enableIframeFuncBoardObjectContent": false,
+    "enableBackendProxy": true,
+    "allowedProtectedBackends": {
+        "openaiApi": {
+            "backendSchemas": [
+                {
+                    "method": "Header",
+                    "template": "Authorization=Bearer {{secret.token}}",
+                    "connection": "Http",
+                    "allowedUrls": [
+                        "https://api.openai.com/v1/responses"
+                    ]
+                }
+            ]
+        }
+    },
+    "incomingActions": [
+        {
+            "id": "say-hi",
+            "label": "Say hi"
+        }
+    ],
+    "outgoingActions": [
+        {
+            "id": "onloaded",
+            "label": "Loaded"
+        },
+        {
+            "id": "ai-requested",
+            "label": "AI requested",
+            "outputData": [
+                {
+                    "id": "prompt",
+                    "label": "Prompt",
+                    "type": "Text"
+                }
+            ]
+        },
+        {
+            "id": "ai-responded",
+            "label": "AI responded",
+            "outputData": [
+                {
+                    "id": "response",
+                    "label": "Response",
+                    "type": "Text"
+                }
+            ]
+        },
+        {
+            "id": "ai-request-failed",
+            "label": "AI request failed",
+            "outputData": [
+                {
+                    "id": "error",
+                    "label": "Error",
+                    "type": "Text"
+                }
+            ]
+        }
+    ],
+    "backgroundColor": "#051825",
+    "textColor": "#f9fff6",
+    "primaryColor": "#6da8ff",
+    "font": "",
+    "enabledColorPickers": {
+        "background": true,
+        "primary": true,
+        "text": true,
+        "font": false
+    },
+    "iframeAllowMicrophone": false,
+    "requiredAPIfunctions": [
+        "initialize",
+        "triggerAction",
+        "onIncomingAction",
+        "fetchProtectedUrlJSON"
+    ],
+    "version": "3.20260803",
+    "DefaultWidth": 640,
+    "DefaultHeight": 360
+}
+-->

@@ -1,186 +1,290 @@
-<!--
-  WIDGET SUMMARY
-  ==============
+<!-- WIDGETNAME:
+Basic Actions
+-->
+<!-- WIDGETDESCRIPTION:
+A minimal demo that fires an outgoing action, logs incoming actions, and reads the shared synced status.
+-->
+<!-- WIDGETHELP:
+## What it does
 
-  A minimal Alleo E-widget that fires an outgoing action, logs incoming
-  actions, and reads shared synced status.
+This widget is a minimal demonstration of the Alleo action system. It fires an
+outgoing `demo` action when you tap the button, prints every incoming action it
+receives, and shows the current shared synced status.
 
-  Outgoing actions (triggered via alleo.triggerAction):
-    - onloaded ()                         fired once after init
-    - demo (demo-param: string)           fired when "Trigger action" is clicked
+## How to use it
 
-  Incoming actions (handled via alleo.onIncomingAction):
-    - <any> (data?: Record<string, unknown>)   every incoming action is logged
+1. Import the widget and enable **Enable Alleo board features for enclosed
+   content** (and **Enable synchronizing status** to see status updates).
+2. Tap **Trigger demo action** to fire the `demo` action with a sample
+   parameter; connect it to an automation to see it flow through the board.
+3. Tap **Request synced status** to re-read the shared status on demand.
+4. Send the widget a `demo-incoming` action from another board object to watch
+   it appear in the on-screen log.
 
-  Synced status:
-    - Reads the full status via alleo.onSyncedStatusUpdate
-    - Requests it via alleo.requestSyncedStatus (does not write)
+## Settings
 
-  ⚠ REQUIRED SETTINGS: "Enable Alleo board features for enclosed content"
-     (and "Enable synchronizing status" for the status request).
+Board editors can adjust the background, primary, and text colors. The action id,
+parameter name, and sample value are grouped in the configuration section at the
+top of the file.
+
+## Notes
+
+The widget only reads synced status; it never writes it. It is safe to run
+without the synchronizing-status capability, in which case the status simply
+stays empty.
 -->
 <!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Alleo E-widget — Basic actions</title>
-    <!-- ═══════════════ Configuration ═══════════════ -->
-    <script>
-        /** User-tunable values. Edit these to customize the widget. */
-        const settings = {
-            /** @type {string} Outgoing action id fired when the trigger button is clicked. */
-            triggerActionId: 'demo',
-            /** @type {string} Name of the parameter carried by the trigger action. */
-            triggerParamName: 'demo-param',
-            /** @type {string} Payload value sent with the demo action. */
-            triggerParamValue: 'Hello from iframe',
-            /** @type {number} Maximum number of lines kept in the on-screen log. */
-            maxLogLines: 200,
-        }
-    </script>
-    <style>
-        body {
-            --font-family: Arial, sans-serif; /* widget font */
-            --log-background: #f4f4f4;         /* log panel background (CSS color) */
-        }
-    </style>
-    <!-- ═════════════ END Configuration ═════════════ -->
-    <style>
-        body {
-            font-family: var(--font-family);
-            padding: 16px;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Basic Actions</title>
 
-        button {
-            padding: 8px 12px;
-        }
+        <!-- =============== Configuration =============== -->
+        <script>
+            /** User-tunable values. Edit these to customize the widget. */
+            const settings = {
+                /** @type {string} Outgoing action id fired by the trigger button. */
+                triggerActionId: 'demo',
+                /** @type {string} Parameter name carried by the trigger action. */
+                triggerParamName: 'demo-param',
+                /** @type {string} Payload value sent with the demo action. */
+                triggerParamValue: 'Hello from the E-widget',
+                /** @type {string} Incoming action id that is logged when received. */
+                incomingActionId: 'demo-incoming',
+                /** @type {number} Maximum number of lines kept in the on-screen log. */
+                maxLogLines: 40,
+            }
+        </script>
+        <style>
+            body {
+                /* Defaults — alleo.initialize() overrides these with the configured theme. */
+                --alleo-background-color: #051825;
+                --alleo-text-color: #f9fff6;
+                --alleo-primary-color: #6da8ff;
+                --alleo-font: 'PT Root UI', Roboto, 'Helvetica Neue', 'Ubuntu Sans', Helvetica, Verdana, sans-serif;
 
-        pre {
-            background: var(--log-background);
-            padding: 8px;
-        }
-    </style>
-</head>
-<body>
-<EWidgetSDK/>
-<h1>Alleo E-widget — Basic actions</h1>
-<p>This page is intended to run inside the E-widget iframe.</p>
+                /** Fixed content width; contracts only when the iframe is narrower. */
+                --content-width: 560px;
+            }
+        </style>
+        <!-- ============= END Configuration ============= -->
 
-<button id="trigger">Trigger action</button>
-<button id="request">Request synced status</button>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
 
-<h2>Log</h2>
-<pre id="log"></pre>
+            html,
+            body {
+                min-height: 100%;
+                margin: 0;
+            }
 
-<script>
-    'use strict'
+            body {
+                display: grid;
+                place-items: center;
+                min-height: 100vh;
+                padding: 16px;
+                font-family: var(--alleo-font, sans-serif);
+                font-size: 16px;
+                background: var(--alleo-background-color);
+                color: var(--alleo-text-color);
+            }
 
-    /**
-     * Minimal demo widget: fires an outgoing action, logs every incoming action,
-     * and reads the shared synced status.
-     */
-    class BasicActionsWidget {
-        /* ═══════════════ Configuration ═══════════════ */
+            .widget {
+                display: grid;
+                gap: 16px;
+                width: min(100%, var(--content-width));
+            }
 
-        /** @type {string} Outgoing action id fired when the trigger button is clicked. */
-        triggerActionId = settings.triggerActionId
+            h1 {
+                margin: 0;
+                font-size: 22px;
+                line-height: 1.25;
+            }
 
-        /** @type {string} Name of the parameter carried by the {@link triggerActionId} action. */
-        triggerParamName = settings.triggerParamName
+            .buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
 
-        /** @type {string} Payload value sent with the demo action. */
-        triggerParamValue = settings.triggerParamValue
+            button {
+                flex: 1 1 200px;
+                min-height: 52px;
+                padding: 12px 18px;
+                border: 0;
+                cursor: pointer;
+                touch-action: manipulation;
+                font: 700 17px/1.2 var(--alleo-font, sans-serif);
+                background: var(--alleo-primary-color);
+                color: color-mix(in srgb, var(--alleo-text-color) 94%, var(--alleo-background-color));
+            }
 
-        /** @type {number} Maximum number of lines kept in the on-screen log. */
-        maxLogLines = settings.maxLogLines
+            button.secondary {
+                background: color-mix(in srgb, var(--alleo-background-color) 78%, var(--alleo-text-color));
+                color: var(--alleo-text-color);
+            }
 
-        /* ═══════════════ End Configuration ═══════════════ */
+            button:active {
+                background: color-mix(in srgb, var(--alleo-primary-color) 80%, var(--alleo-background-color));
+            }
 
-        /**
-         * @param {object} alleo The Alleo SDK messenger (the global `alleo`).
-         */
-        constructor(alleo) {
-            /** @type {object} Alleo SDK messenger. */
-            this.alleo = alleo
+            h2 {
+                margin: 0;
+                font-size: 15px;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: color-mix(in srgb, var(--alleo-text-color) 66%, var(--alleo-background-color));
+            }
+
+            .log {
+                margin: 0;
+                padding: 14px 16px;
+                min-height: 160px;
+                max-height: 260px;
+                overflow: auto;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+                font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+                font-size: 14px;
+                line-height: 1.5;
+                background: color-mix(in srgb, var(--alleo-background-color) 86%, var(--alleo-text-color));
+            }
+        </style>
+    </head>
+    <body>
+        <EWidgetSDK />
+
+        <main class="widget">
+            <h1>Basic actions</h1>
+
+            <section class="buttons" aria-label="Actions">
+                <button type="button" id="trigger">Trigger demo action</button>
+                <button type="button" id="request" class="secondary">Request synced status</button>
+            </section>
+
+            <h2>Log</h2>
+            <pre class="log" id="log" role="log" aria-live="polite"></pre>
+        </main>
+
+        <script>
+            /**
+             * Minimal demo widget: fires an outgoing action, logs incoming actions,
+             * and reads the shared synced status.
+             */
+            class BasicActionsWidget {
+                /* =============== Configuration =============== */
+
+                /** @type {string} Outgoing action id fired by the trigger button. */
+                triggerActionId = settings.triggerActionId
+
+                /** @type {string} Parameter name carried by the trigger action. */
+                triggerParamName = settings.triggerParamName
+
+                /** @type {string} Payload value sent with the demo action. */
+                triggerParamValue = settings.triggerParamValue
+
+                /** @type {string} Incoming action id that is logged when received. */
+                incomingActionId = settings.incomingActionId
+
+                /** @type {number} Maximum number of lines kept in the on-screen log. */
+                maxLogLines = settings.maxLogLines
+
+                /* =============== End Configuration =============== */
+
+                /**
+                 * Stores DOM references used by the controller.
+                 * @param {HTMLButtonElement} triggerButton Fires the outgoing action.
+                 * @param {HTMLButtonElement} requestButton Requests the synced status.
+                 * @param {HTMLElement} logElement On-screen log target.
+                 */
+                constructor(triggerButton, requestButton, logElement) {
+                    /** @type {HTMLButtonElement} Fires the outgoing action. */
+                    this.triggerButton = triggerButton
+                    /** @type {HTMLButtonElement} Requests the synced status. */
+                    this.requestButton = requestButton
+                    /** @type {HTMLElement} On-screen log target. */
+                    this.logElement = logElement
+                }
+
+                /**
+                 * Registers listeners and integrations, then initializes the SDK.
+                 */
+                async start() {
+                    this.bindEvents()
+                    this.bindBoardHandlers()
+                    await alleo.initialize()
+                    this.log('Widget ready (onloaded fired).')
+                    console.log('[BasicActionsWidget.start] Widget initialized')
+                }
+
+                /**
+                 * Attaches touch/click handlers to the buttons.
+                 */
+                bindEvents() {
+                    this.triggerButton.addEventListener('click', () => this.sendDemoAction())
+                    this.requestButton.addEventListener('click', () => this.requestStatus())
+                }
+
+                /**
+                 * Subscribes to synced-status updates and incoming actions.
+                 */
+                bindBoardHandlers() {
+                    alleo.onSyncedStatusUpdate((status) => this.log('syncedStatusUpdate', status))
+                    alleo.onIncomingAction(({ actionId, data }) => this.log(`incomingAction: ${actionId}`, data))
+                }
+
+                /**
+                 * Fires the outgoing demo action with its configured payload.
+                 */
+                sendDemoAction() {
+                    alleo.triggerAction(this.triggerActionId, { [this.triggerParamName]: this.triggerParamValue })
+                    this.log(`triggerAction sent: ${this.triggerActionId}`)
+                    console.log('[BasicActionsWidget.sendDemoAction] fired', this.triggerActionId)
+                }
+
+                /**
+                 * Asks the board to resend the current synced status.
+                 */
+                requestStatus() {
+                    alleo.requestSyncedStatus()
+                    this.log('requestSyncedStatus sent')
+                }
+
+                /**
+                 * Prepends a line to the on-screen log, trimmed to maxLogLines.
+                 * @param {string} message Text to log.
+                 * @param {unknown} [data] Optional value appended as JSON.
+                 */
+                log(message, data) {
+                    const line = data !== undefined ? `${message} ${JSON.stringify(data)}` : message
+                    this.logElement.textContent = `${line}\n${this.logElement.textContent}`
+                        .split('\n')
+                        .slice(0, this.maxLogLines)
+                        .join('\n')
+                }
+            }
+
+            /** @type {HTMLButtonElement} Fires the outgoing action. */
+            const triggerButton = document.getElementById('trigger')
+
+            /** @type {HTMLButtonElement} Requests the synced status. */
+            const requestButton = document.getElementById('request')
+
             /** @type {HTMLElement} On-screen log target. */
-            this.logEl = document.getElementById('log')
-            /** @type {HTMLButtonElement} Fires the outgoing demo action. */
-            this.triggerBtn = document.getElementById('trigger')
-            /** @type {HTMLButtonElement} Requests the current synced status. */
-            this.requestBtn = document.getElementById('request')
-        }
+            const logElement = document.getElementById('log')
 
-        /**
-         * Wire up listeners, pull existing shared state, and announce readiness.
-         * @fires onloaded
-         */
-        init() {
-            this.alleo.onSyncedStatusUpdate((status) => this.handleSyncedStatus(status))
-            this.alleo.onIncomingAction(({actionId, data}) => this.handleIncomingAction(actionId, data))
-            this.triggerBtn.addEventListener('click', () => this.sendDemoAction())
-            this.requestBtn.addEventListener('click', () => this.requestStatus())
+            /** @type {BasicActionsWidget} Active widget controller. */
+            const basicActionsWidget = new BasicActionsWidget(triggerButton, requestButton, logElement)
 
-            // Pull any existing shared state, then announce the widget is ready.
-            this.alleo.requestSyncedStatus()
-            this.alleo.triggerAction('onloaded')
-            this.log('onloaded sent')
-            console.log('BasicActionsWidget.init: ready')
-        }
-
-        /**
-         * Fire the outgoing demo action with its configured payload.
-         * @fires demo
-         */
-        sendDemoAction() {
-            this.alleo.triggerAction(this.triggerActionId, {[this.triggerParamName]: this.triggerParamValue})
-            this.log('triggerAction sent')
-            console.log('BasicActionsWidget.sendDemoAction: fired', this.triggerActionId)
-        }
-
-        /** Ask the board to resend the current synced status. */
-        requestStatus() {
-            this.alleo.requestSyncedStatus()
-            this.log('requestSyncedStatus sent')
-        }
-
-        /**
-         * Log a synced-status update.
-         * @param {Record<string, unknown>=} status Latest full shared state.
-         */
-        handleSyncedStatus(status) {
-            this.log('syncedStatusUpdate:', status)
-        }
-
-        /**
-         * Log an incoming action.
-         * @param {string} actionId Id of the incoming action.
-         * @param {Record<string, unknown>=} data Optional action payload.
-         */
-        handleIncomingAction(actionId, data) {
-            this.log(`incomingAction: ${actionId}`, data)
-            console.log('BasicActionsWidget.handleIncomingAction:', actionId, data)
-        }
-
-        /**
-         * Prepend a line to the on-screen log, trimmed to {@link maxLogLines}.
-         * @param {string} message Text to log.
-         * @param {unknown=} data Optional value JSON-stringified after the message.
-         */
-        log(message, data) {
-            const line = data !== undefined ? `${message} ${JSON.stringify(data)}` : message
-            this.logEl.textContent = `${line}\n${this.logEl.textContent}`
-                .split('\n').slice(0, this.maxLogLines).join('\n')
-        }
-    }
-
-    new BasicActionsWidget(alleo).init()
-</script>
-</body>
+            void basicActionsWidget.start()
+        </script>
+    </body>
 </html>
 
-<!--
-WIDGETSETTINGS:
+<!-- WIDGETSETTINGS:
 {
     "iframeAllowScripts": true,
     "iframeAllowForms": false,
@@ -191,9 +295,12 @@ WIDGETSETTINGS:
     "iframeReferrerPolicy": "no-referrer",
     "iframeUnloadWhenOffScreen": true,
     "enableIframeCommunication": true,
+    "enableGetParams": false,
+    "enableGetUser": false,
     "enableIframeFuncAddContent": false,
     "enableSyncedStatus": true,
     "enableIframeFuncBoardObjectContent": false,
+    "enableBackendProxy": false,
     "incomingActions": [
         {
             "id": "demo-incoming",
@@ -204,6 +311,7 @@ WIDGETSETTINGS:
         }
     ],
     "outgoingActions": [
+        { "id": "onloaded", "label": "Loaded" },
         {
             "id": "demo",
             "label": "Demo",
@@ -212,9 +320,15 @@ WIDGETSETTINGS:
             ]
         }
     ],
-    "backgroundColor": "#FFFFFF",
-    "overwriteTextColor": false,
-    "textColor": "",
-    "iframeAllowMicrophone": false
+    "backgroundColor": "#051825",
+    "textColor": "#f9fff6",
+    "primaryColor": "#6da8ff",
+    "font": "",
+    "enabledColorPickers": { "background": true, "primary": true, "text": true, "font": false },
+    "iframeAllowMicrophone": false,
+    "requiredAPIfunctions": ["initialize", "triggerAction", "requestSyncedStatus", "onSyncedStatusUpdate", "onIncomingAction"],
+    "version": "1.20260728",
+    "DefaultWidth": 640,
+    "DefaultHeight": 460
 }
 -->

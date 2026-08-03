@@ -1,143 +1,293 @@
-<!--
-  WIDGET SUMMARY
-  ==============
+<!-- WIDGETNAME:
+Add Content
+-->
+<!-- WIDGETDESCRIPTION:
+A three-button panel that adds a notepad, a sticky note, or an HTML embed to the Alleo board.
+-->
+<!-- WIDGETHELP:
+## What it does
 
-  An Alleo E-widget that adds new objects (notepad, sticky note, HTML embed)
-  to the board.
+This widget demonstrates adding new objects to an Alleo board from inside an
+E-widget. It offers three touch-friendly buttons that each create a different
+kind of board object: a Markdown **notepad**, a short **sticky note**, and a
+small **HTML embed**.
 
-  Outgoing actions (triggered via alleo.triggerAction):
-    - onloaded ()   fired once after init
+## How to use it
 
-  Incoming actions (handled via alleo.onIncomingAction):
-    - none
+1. Import the widget and enable board features plus **Enable adding new content
+   to the board** in its settings.
+2. Tap **Add notepad**, **Add sticky note**, or **Add HTML embed**.
+3. The new object appears on the board, and the widget fires a `content-added`
+   action carrying the object type so automations can react.
 
-  Board content (added via alleo.addContent):
-    - notepad      (textFormat: 'markdown', text: string)
-    - sticky-note  (text, color, outlineColor, shape)
-    - html         (html: string)
+You can also create any of the three objects from another board object or
+automation by sending the matching incoming action (`add-notepad`,
+`add-sticky-note`, `add-html`).
 
-  ⚠ REQUIRED SETTINGS: "Enable Alleo board features for enclosed content"
-     and "Enable adding new content to the board".
+## Settings
+
+Board editors can adjust the background, primary, and text colors from the
+widget settings. The object templates (notepad text, sticky note text/color,
+HTML markup) live in the configuration section near the top of the file.
+
+## Notes
+
+The widget keeps no state and is independent per instance. It requires the
+**Enable adding new content to the board** capability; without it the buttons
+have no effect.
 -->
 <!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Alleo E-widget — Add content</title>
-    <!-- ═══════════════ Configuration ═══════════════ -->
-    <script>
-        /** User-tunable values. Edit these to customize the widget. */
-        const settings = {
-            /** @type {{type: string, textFormat: string, text: string}} Notepad object template. */
-            notepadTemplate: {
-                type: 'notepad',
-                textFormat: 'markdown',
-                text: '# New note\n\nAdded from iframe.',
-            },
-            /** @type {{type: string, text: string, color: string, outlineColor: string, shape: string}} Sticky-note template. */
-            stickyTemplate: {
-                type: 'sticky-note',
-                text: 'Remember to review the draft',
-                color: '#FFE680',
-                outlineColor: '#B38F00',
-                shape: 'square',
-            },
-            /** @type {{type: string, html: string}} HTML-embed object template. */
-            htmlTemplate: {
-                type: 'html',
-                html: '<!doctype html><html><body style="background-color: black; color: white;"><h2>Hello from iframe</h2></body></html>',
-            },
-        }
-    </script>
-    <style>
-        body {
-            --font-family: Arial, sans-serif; /* widget font */
-        }
-    </style>
-    <!-- ═════════════ END Configuration ═════════════ -->
-    <style>
-        body {
-            font-family: var(--font-family);
-            padding: 16px;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Add Content</title>
 
-        button {
-            padding: 8px 12px;
-            margin-right: 8px;
-            margin-bottom: 8px;
-        }
-    </style>
-</head>
-<body>
-<EWidgetSDK/>
-<h1>Alleo E-widget — Add content</h1>
-<p>These commands require "Enable adding new content to the board" in settings.</p>
+        <!-- =============== Configuration =============== -->
+        <script>
+            /** User-tunable values. Edit these to customize the widget. */
+            const settings = {
+                /** @type {string} Heading shown above the buttons. */
+                heading: 'Add content to the board',
+                /** @type {{type: 'notepad', textFormat: 'markdown', text: string}} Notepad object template. */
+                notepadTemplate: {
+                    type: 'notepad',
+                    textFormat: 'markdown',
+                    text: '# New note\n\nAdded from an E-widget.',
+                },
+                /** @type {{type: 'sticky-note', text: string}} Sticky-note object template. */
+                stickyTemplate: {
+                    type: 'sticky-note',
+                    text: 'Remember to review the draft',
+                },
+                /** @type {{type: 'html', html: string}} HTML-embed object template. */
+                htmlTemplate: {
+                    type: 'html',
+                    html: '<!doctype html><html><body style="margin:0;display:grid;place-items:center;height:100vh;background:#051825;color:#f9fff6;font-family:sans-serif"><h2>Hello from an E-widget</h2></body></html>',
+                },
+            }
+        </script>
+        <style>
+            body {
+                /* Defaults — alleo.initialize() overrides these with the configured theme. */
+                --alleo-background-color: #051825;
+                --alleo-text-color: #f9fff6;
+                --alleo-primary-color: #6da8ff;
+                --alleo-font: 'PT Root UI', Roboto, 'Helvetica Neue', 'Ubuntu Sans', Helvetica, Verdana, sans-serif;
 
-<button id="add-notepad">Add notepad</button>
-<button id="add-sticky">Add sticky note</button>
-<button id="add-html">Add HTML embed</button>
+                /** Fixed content width; contracts only when the iframe is narrower. */
+                --content-width: 520px;
+            }
+        </style>
+        <!-- ============= END Configuration ============= -->
 
-<script>
-    'use strict'
+        <style>
+            * {
+                box-sizing: border-box;
+            }
 
-    /**
-     * Adds new objects (notepad, sticky note, HTML embed) to the board via
-     * alleo.addContent. Each button maps to one content template.
-     */
-    class AddContentWidget {
-        /* ═══════════════ Configuration ═══════════════ */
+            html,
+            body {
+                min-height: 100%;
+                margin: 0;
+            }
 
-        /** @type {{type: string, textFormat: string, text: string}} Notepad object template. */
-        notepadTemplate = settings.notepadTemplate
+            body {
+                display: grid;
+                place-items: center;
+                min-height: 100vh;
+                padding: 16px;
+                font-family: var(--alleo-font, sans-serif);
+                font-size: 16px;
+                background: var(--alleo-background-color);
+                color: var(--alleo-text-color);
+            }
 
-        /** @type {{type: string, text: string, color: string, outlineColor: string, shape: string}} Sticky-note template. */
-        stickyTemplate = settings.stickyTemplate
+            .widget {
+                display: grid;
+                gap: 16px;
+                width: min(100%, var(--content-width));
+            }
 
-        /** @type {{type: string, html: string}} HTML-embed object template. */
-        htmlTemplate = settings.htmlTemplate
+            h1 {
+                margin: 0;
+                font-size: 22px;
+                line-height: 1.25;
+            }
 
-        /* ═══════════════ End Configuration ═══════════════ */
+            .buttons {
+                display: grid;
+                gap: 12px;
+            }
 
-        /**
-         * @param {object} alleo The Alleo SDK messenger (the global `alleo`).
-         */
-        constructor(alleo) {
-            /** @type {object} Alleo SDK messenger. */
-            this.alleo = alleo
-        }
+            .add-button {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                min-height: 56px;
+                padding: 12px 18px;
+                border: 0;
+                cursor: pointer;
+                touch-action: manipulation;
+                text-align: left;
+                font: 700 17px/1.2 var(--alleo-font, sans-serif);
+                background: var(--alleo-primary-color);
+                color: color-mix(in srgb, var(--alleo-text-color) 94%, var(--alleo-background-color));
+            }
 
-        /**
-         * Wire each button to its content template, then announce readiness.
-         * @fires onloaded
-         */
-        init() {
-            document.getElementById('add-notepad').addEventListener('click', () => this.addContent(this.notepadTemplate))
-            document.getElementById('add-sticky').addEventListener('click', () => this.addContent(this.stickyTemplate))
-            document.getElementById('add-html').addEventListener('click', () => this.addContent(this.htmlTemplate))
+            .add-button:hover {
+                background: color-mix(in srgb, var(--alleo-primary-color) 86%, var(--alleo-text-color));
+            }
 
-            // Listeners attached — announce the widget is ready.
-            this.alleo.triggerAction('onloaded')
-            console.log('AddContentWidget.init: ready')
-        }
+            .add-button:active {
+                background: color-mix(in srgb, var(--alleo-primary-color) 80%, var(--alleo-background-color));
+            }
 
-        /**
-         * Add a new object to the board.
-         * @param {object} params Parameters passed straight to alleo.addContent.
-         */
-        addContent(params) {
-            this.alleo.addContent(params)
-            console.log('AddContentWidget.addContent:', params.type)
-        }
-    }
+            .add-button__icon {
+                flex: 0 0 auto;
+                width: 24px;
+                height: 24px;
+            }
 
-    new AddContentWidget(alleo).init()
-</script>
-</body>
+            .status {
+                min-height: 24px;
+                color: color-mix(in srgb, var(--alleo-text-color) 76%, var(--alleo-background-color));
+            }
+        </style>
+    </head>
+    <body>
+        <EWidgetSDK />
+
+        <main class="widget">
+            <h1 id="heading">Add content to the board</h1>
+
+            <section class="buttons" aria-label="Add content">
+                <button type="button" class="add-button" data-kind="notepad">
+                    <svg class="add-button__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect x="4" y="3" width="16" height="18" rx="1" stroke="currentColor" stroke-width="2" />
+                        <path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    Add notepad
+                </button>
+                <button type="button" class="add-button" data-kind="sticky-note">
+                    <svg class="add-button__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M4 4h16v11l-5 5H4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+                        <path d="M14 20v-6h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+                    </svg>
+                    Add sticky note
+                </button>
+                <button type="button" class="add-button" data-kind="html">
+                    <svg class="add-button__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M9 8l-4 4 4 4M15 8l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Add HTML embed
+                </button>
+            </section>
+
+            <p class="status" id="status" role="status" aria-live="polite">Tap a button to add an object.</p>
+        </main>
+
+        <script>
+            /**
+             * Adds notepad, sticky-note, and HTML-embed objects to the board via
+             * alleo.addContent, and mirrors each creation as an outgoing action.
+             */
+            class AddContentWidget {
+                /* =============== Configuration =============== */
+
+                /** @type {Record<string, object>} Content templates keyed by button kind. */
+                templates = {
+                    'notepad': settings.notepadTemplate,
+                    'sticky-note': settings.stickyTemplate,
+                    'html': settings.htmlTemplate,
+                }
+
+                /** @type {Record<string, string>} Incoming action ids mapped to a button kind. */
+                incomingActionMap = {
+                    'add-notepad': 'notepad',
+                    'add-sticky-note': 'sticky-note',
+                    'add-html': 'html',
+                }
+
+                /** @type {string} Outgoing action fired after content is added. */
+                contentAddedActionId = 'content-added'
+
+                /* =============== End Configuration =============== */
+
+                /**
+                 * Stores DOM references used by the controller.
+                 * @param {NodeListOf<HTMLButtonElement>} buttons Add-content buttons.
+                 * @param {HTMLElement} statusElement Live status line.
+                 */
+                constructor(buttons, statusElement) {
+                    /** @type {NodeListOf<HTMLButtonElement>} Add-content buttons. */
+                    this.buttons = buttons
+                    /** @type {HTMLElement} Live status line. */
+                    this.statusElement = statusElement
+                }
+
+                /**
+                 * Wires interactions, registers incoming actions, and initializes the SDK.
+                 */
+                async start() {
+                    this.bindEvents()
+                    this.bindIncomingActions()
+                    await alleo.initialize()
+                    console.log('[AddContentWidget.start] Widget initialized')
+                }
+
+                /**
+                 * Attaches touch/click handlers to every add-content button.
+                 */
+                bindEvents() {
+                    this.buttons.forEach((button) => {
+                        button.addEventListener('click', () => this.addContent(button.dataset.kind))
+                    })
+                }
+
+                /**
+                 * Registers incoming actions so other board objects can add content.
+                 */
+                bindIncomingActions() {
+                    alleo.onIncomingAction(({ actionId }) => {
+                        const kind = this.incomingActionMap[actionId]
+                        if (kind) this.addContent(kind)
+                    })
+                }
+
+                /**
+                 * Adds a board object of the requested kind and reports it.
+                 * @param {string} kind Template key ('notepad' | 'sticky-note' | 'html').
+                 */
+                addContent(kind) {
+                    const template = this.templates[kind]
+                    if (!template) {
+                        console.warn(`[AddContentWidget.addContent] Unknown kind: ${kind}`)
+                        return
+                    }
+
+                    alleo.addContent(template)
+                    alleo.triggerAction(this.contentAddedActionId, { type: kind })
+                    this.statusElement.textContent = `Added a ${kind.replace('-', ' ')}.`
+                    console.log(`[AddContentWidget.addContent] Added ${kind}`)
+                }
+            }
+
+            /** @type {NodeListOf<HTMLButtonElement>} Add-content buttons. */
+            const buttons = document.querySelectorAll('.add-button')
+
+            /** @type {HTMLElement} Live status line. */
+            const statusElement = document.getElementById('status')
+
+            /** @type {AddContentWidget} Active widget controller. */
+            const addContentWidget = new AddContentWidget(buttons, statusElement)
+
+            void addContentWidget.start()
+        </script>
+    </body>
 </html>
 
-<!--
-WIDGETSETTINGS:
+<!-- WIDGETSETTINGS:
 {
     "iframeAllowScripts": true,
     "iframeAllowForms": false,
@@ -148,14 +298,36 @@ WIDGETSETTINGS:
     "iframeReferrerPolicy": "no-referrer",
     "iframeUnloadWhenOffScreen": true,
     "enableIframeCommunication": true,
+    "enableGetParams": false,
+    "enableGetUser": false,
     "enableIframeFuncAddContent": true,
     "enableSyncedStatus": false,
     "enableIframeFuncBoardObjectContent": false,
-    "incomingActions": [],
-    "outgoingActions": [],
-    "backgroundColor": "#FFFFFF",
-    "overwriteTextColor": false,
-    "textColor": "",
-    "iframeAllowMicrophone": false
+    "enableBackendProxy": false,
+    "incomingActions": [
+        { "id": "add-notepad", "label": "Add notepad" },
+        { "id": "add-sticky-note", "label": "Add sticky note" },
+        { "id": "add-html", "label": "Add HTML embed" }
+    ],
+    "outgoingActions": [
+        { "id": "onloaded", "label": "Loaded" },
+        {
+            "id": "content-added",
+            "label": "Content added",
+            "outputData": [
+                { "id": "type", "label": "Type", "type": "Text" }
+            ]
+        }
+    ],
+    "backgroundColor": "#051825",
+    "textColor": "#f9fff6",
+    "primaryColor": "#6da8ff",
+    "font": "",
+    "enabledColorPickers": { "background": true, "primary": true, "text": true, "font": false },
+    "iframeAllowMicrophone": false,
+    "requiredAPIfunctions": ["initialize", "addContent", "triggerAction", "onIncomingAction"],
+    "version": "1.20260728",
+    "DefaultWidth": 620,
+    "DefaultHeight": 420
 }
 -->

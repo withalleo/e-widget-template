@@ -1,239 +1,491 @@
-<!--
-  WIDGET SUMMARY
-  ==============
+<!-- WIDGETNAME:
+Board Object Content
+-->
+<!-- WIDGETDESCRIPTION:
+Reads, replaces, and appends the text of a whitelisted board object using the Alleo board-object content API.
+-->
+<!-- WIDGETHELP:
+## What it does
 
-  An Alleo E-widget that reads and writes the text of a whitelisted board
-  object (get / replace / append).
+This widget demonstrates reading and writing the text content of other board
+objects. Pick a whitelist index and a text format, then **Get**, **Replace**, or
+**Append** the target object's content. Results and errors are shown in an
+on-screen log.
 
-  Outgoing actions (triggered via alleo.triggerAction):
-    - onloaded ()   fired once after init
+## How to use it
 
-  Incoming actions (handled via alleo.onIncomingAction):
-    - none
+1. Enable **Enable Alleo board features**, **Enable reading/writing board object
+   content**, and add one or more objects to the **Whitelisted board objects**
+   list in the widget settings.
+2. Set **Index** to the 1-based position of the object in that whitelist.
+3. Choose a **Format** (text, markdown, or html) from the custom dropdown.
+4. Tap **Get** to load the object's text into the box, or type text and tap
+   **Replace** or **Append** to write it back.
 
-  Board object content (whitelist index N chosen by the user):
-    - Reads object at index N            via alleo.getBoardObjectContent
-    - Writes (replace) object at index N via alleo.replaceBoardObjectContent
-    - Writes (append) object at index N  via alleo.appendBoardObjectContent
-    - Errors handled via alleo.onError
+The `read-object` incoming action can trigger a read from another board object;
+its optional `index` parameter overrides the on-screen index.
 
-  ⚠ REQUIRED SETTINGS: "Enable Alleo board features for enclosed content",
-     "Enable reading/writing board object content", and at least one object
-     added to "Whitelisted board objects" in widget settings.
+## Settings
+
+Board editors can adjust the background, primary, and text colors. The default
+index and format live in the configuration section near the top of the file.
+
+## Notes
+
+Write operations are fire-and-forget; failures are reported through the log via
+`alleo.onError`. The whitelist indices are **1-based positions**, not object ids.
 -->
 <!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Alleo E-widget — Board object content</title>
-    <!-- ═══════════════ Configuration ═══════════════ -->
-    <script>
-        /** User-tunable values. Edit these to customize the widget. */
-        const settings = {
-            /** @type {number} Fallback whitelist index (1-based) when the input is empty/invalid. */
-            defaultIndex: 1,
-            /** @type {number} Maximum number of lines kept in the on-screen log. */
-            maxLogLines: 200,
-        }
-    </script>
-    <style>
-        body {
-            --font-family: Arial, sans-serif; /* widget font */
-            --log-background: #f4f4f4;         /* log panel background (CSS color) */
-        }
-    </style>
-    <!-- ═════════════ END Configuration ═════════════ -->
-    <style>
-        body {
-            font-family: var(--font-family);
-            padding: 16px;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Board Object Content</title>
 
-        button {
-            padding: 8px 12px;
-            margin-right: 8px;
-            margin-bottom: 8px;
-        }
-
-        textarea {
-            width: 100%;
-            min-height: 80px;
-            font-family: monospace;
-        }
-
-        select,
-        input[type='number'] {
-            padding: 4px 8px;
-        }
-
-        pre {
-            background: var(--log-background);
-            padding: 8px;
-            max-height: 200px;
-            overflow: auto;
-        }
-
-        .controls {
-            margin-bottom: 16px;
-        }
-
-        .controls label {
-            display: inline-block;
-            margin-right: 12px;
-        }
-    </style>
-</head>
-<body>
-<EWidgetSDK/>
-<h1>Alleo E-widget — Board object content</h1>
-<p>
-    These commands require <strong>Enable reading/writing board object content</strong>
-    and at least one whitelisted board object in settings.
-</p>
-
-<div class="controls">
-    <label>
-        Index:
-        <input id="index" min="1" style="width: 60px" type="number" value="1"/>
-    </label>
-    <label>
-        Format:
-        <select id="format">
-            <option value="text">text</option>
-            <option value="markdown">markdown</option>
-            <option value="html">html</option>
-        </select>
-    </label>
-</div>
-
-<button id="get">Get content</button>
-<button id="replace">Replace content</button>
-<button id="append">Append content</button>
-
-<h2>Text</h2>
-<textarea id="text" placeholder="Enter text to replace or append…"></textarea>
-
-<h2>Log</h2>
-<pre id="log"></pre>
-
-<script>
-    'use strict'
-
-    /**
-     * Reads and writes the text of a whitelisted board object: get / replace /
-     * append, plus a global error handler.
-     */
-    class BoardObjectContentWidget {
-        /* ═══════════════ Configuration ═══════════════ */
-
-        /** @type {number} Fallback whitelist index (1-based) when the input is empty/invalid. */
-        defaultIndex = settings.defaultIndex
-
-        /** @type {number} Maximum number of lines kept in the on-screen log. */
-        maxLogLines = settings.maxLogLines
-
-        /* ═══════════════ End Configuration ═══════════════ */
-
-        /**
-         * @param {object} alleo The Alleo SDK messenger (the global `alleo`).
-         */
-        constructor(alleo) {
-            /** @type {object} Alleo SDK messenger. */
-            this.alleo = alleo
-            /** @type {HTMLElement} On-screen log target. */
-            this.logEl = document.getElementById('log')
-            /** @type {HTMLInputElement} Whitelist index input (1-based). */
-            this.indexInput = document.getElementById('index')
-            /** @type {HTMLSelectElement} Content format selector. */
-            this.formatSelect = document.getElementById('format')
-            /** @type {HTMLTextAreaElement} Text used for replace/append and shown on get. */
-            this.textArea = document.getElementById('text')
-        }
-
-        /**
-         * Wire buttons, register the error handler, and announce readiness.
-         * @fires onloaded
-         */
-        init() {
-            document.getElementById('get').addEventListener('click', () => this.getContent())
-            document.getElementById('replace').addEventListener('click', () => this.replaceContent())
-            document.getElementById('append').addEventListener('click', () => this.appendContent())
-            this.alleo.onError(({index, error, requestId}) => this.handleError(index, error, requestId))
-
-            // Listeners attached — announce the widget is ready.
-            this.alleo.triggerAction('onloaded')
-            console.log('BoardObjectContentWidget.init: ready')
-        }
-
-        /** @returns {number} The selected whitelist index (1-based), or the default. */
-        get index() {
-            return Number(this.indexInput.value) || this.defaultIndex
-        }
-
-        /** @returns {string} The selected content format ('text' | 'markdown' | 'html'). */
-        get format() {
-            return this.formatSelect.value
-        }
-
-        /** Read the whitelisted object's text and show it in the textarea. */
-        async getContent() {
-            const {index, format} = this
-            this.log(`getBoardObjectContent(${index}, { format: '${format}' }) …`)
-            try {
-                const content = await this.alleo.getBoardObjectContent(index, {format})
-                this.log('Content received:', content)
-                this.textArea.value = content.join('\n')
-            } catch (err) {
-                this.log('Error: ' + err.message)
-                console.warn('BoardObjectContentWidget.getContent failed:', err)
+        <!-- =============== Configuration =============== -->
+        <script>
+            /** User-tunable values. Edit these to customize the widget. */
+            const settings = {
+                /** @type {number} Fallback whitelist index (1-based) when the input is empty/invalid. */
+                defaultIndex: 1,
+                /** @type {string[]} Selectable content formats for read/write operations. */
+                formats: ['text', 'markdown', 'html'],
+                /** @type {string} Format selected on load. */
+                defaultFormat: 'text',
+                /** @type {number} Maximum number of lines kept in the on-screen log. */
+                maxLogLines: 40,
             }
-        }
+        </script>
+        <style>
+            body {
+                /* Defaults — alleo.initialize() overrides these with the configured theme. */
+                --alleo-background-color: #051825;
+                --alleo-text-color: #f9fff6;
+                --alleo-primary-color: #6da8ff;
+                --alleo-font: 'PT Root UI', Roboto, 'Helvetica Neue', 'Ubuntu Sans', Helvetica, Verdana, sans-serif;
 
-        /** Replace the whitelisted object's text with the textarea contents. */
-        replaceContent() {
-            const {index, format} = this
-            this.alleo.replaceBoardObjectContent(index, this.textArea.value, {format})
-            this.log(`replaceBoardObjectContent(${index}) sent`)
-        }
+                /** Fixed content width; contracts only when the iframe is narrower. */
+                --content-width: 600px;
+                /** Subtle surface derived from the theme colors. */
+                --surface: color-mix(in srgb, var(--alleo-background-color) 86%, var(--alleo-text-color));
+            }
+        </style>
+        <!-- ============= END Configuration ============= -->
 
-        /** Append the textarea contents to the whitelisted object's text. */
-        appendContent() {
-            const {index, format} = this
-            this.alleo.appendBoardObjectContent(index, this.textArea.value, {format})
-            this.log(`appendBoardObjectContent(${index}) sent`)
-        }
+        <style>
+            * {
+                box-sizing: border-box;
+            }
 
-        /**
-         * Log a board-object error reported by the SDK.
-         * @param {number} index Whitelist index that failed.
-         * @param {string} error Error message.
-         * @param {string=} requestId Correlation id of the failed request.
-         */
-        handleError(index, error, requestId) {
-            this.log(`boardObjectContentError #${index} (requestId=${requestId}):`, error)
-            console.error('BoardObjectContentWidget.handleError:', index, error)
-        }
+            html,
+            body {
+                min-height: 100%;
+                margin: 0;
+            }
 
-        /**
-         * Prepend a line to the on-screen log, trimmed to {@link maxLogLines}.
-         * @param {string} message Text to log.
-         * @param {unknown=} data Optional value JSON-stringified after the message.
-         */
-        log(message, data) {
-            const line = data !== undefined ? `${message} ${JSON.stringify(data)}` : message
-            this.logEl.textContent = `${line}\n${this.logEl.textContent}`
-                .split('\n').slice(0, this.maxLogLines).join('\n')
-        }
-    }
+            body {
+                display: grid;
+                place-items: center;
+                min-height: 100vh;
+                padding: 16px;
+                font-family: var(--alleo-font, sans-serif);
+                font-size: 16px;
+                background: var(--alleo-background-color);
+                color: var(--alleo-text-color);
+            }
 
-    new BoardObjectContentWidget(alleo).init()
-</script>
-</body>
+            .widget {
+                display: grid;
+                gap: 14px;
+                width: min(100%, var(--content-width));
+            }
+
+            h1 {
+                margin: 0;
+                font-size: 22px;
+                line-height: 1.25;
+            }
+
+            .controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 14px;
+            }
+
+            .field {
+                display: grid;
+                gap: 6px;
+            }
+
+            label {
+                font-size: 14px;
+                color: color-mix(in srgb, var(--alleo-text-color) 70%, var(--alleo-background-color));
+            }
+
+            input[type='number'] {
+                width: 90px;
+                min-height: 48px;
+                padding: 10px 12px;
+                border: 0;
+                font: inherit;
+                background: var(--surface);
+                color: var(--alleo-text-color);
+            }
+
+            /* Custom dropdown (native <select> is not allowed). */
+            .dropdown {
+                position: relative;
+                min-width: 160px;
+            }
+
+            .dropdown__button {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                width: 100%;
+                min-height: 48px;
+                padding: 10px 14px;
+                border: 0;
+                cursor: pointer;
+                touch-action: manipulation;
+                font: inherit;
+                text-align: left;
+                background: var(--surface);
+                color: var(--alleo-text-color);
+            }
+
+            .dropdown__chevron {
+                width: 18px;
+                height: 18px;
+                transition: transform 120ms ease;
+            }
+
+            .dropdown[data-open='true'] .dropdown__chevron {
+                transform: rotate(180deg);
+            }
+
+            .dropdown__list {
+                position: absolute;
+                z-index: 5;
+                inset-inline: 0;
+                top: calc(100% + 4px);
+                margin: 0;
+                padding: 4px;
+                list-style: none;
+                display: none;
+                background: color-mix(in srgb, var(--alleo-background-color) 70%, var(--alleo-text-color));
+            }
+
+            .dropdown[data-open='true'] .dropdown__list {
+                display: block;
+            }
+
+            .dropdown__option {
+                padding: 12px 14px;
+                cursor: pointer;
+                touch-action: manipulation;
+            }
+
+            .dropdown__option[aria-selected='true'],
+            .dropdown__option:hover {
+                background: var(--alleo-primary-color);
+                color: color-mix(in srgb, var(--alleo-text-color) 94%, var(--alleo-background-color));
+            }
+
+            .buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .buttons button {
+                flex: 1 1 120px;
+                min-height: 52px;
+                padding: 12px 16px;
+                border: 0;
+                cursor: pointer;
+                touch-action: manipulation;
+                font: 700 16px/1.2 var(--alleo-font, sans-serif);
+                background: var(--alleo-primary-color);
+                color: color-mix(in srgb, var(--alleo-text-color) 94%, var(--alleo-background-color));
+            }
+
+            .buttons button:active {
+                background: color-mix(in srgb, var(--alleo-primary-color) 80%, var(--alleo-background-color));
+            }
+
+            textarea {
+                width: 100%;
+                min-height: 96px;
+                padding: 12px 14px;
+                border: 0;
+                resize: vertical;
+                font: inherit;
+                background: var(--surface);
+                color: var(--alleo-text-color);
+            }
+
+            .log {
+                margin: 0;
+                padding: 12px 14px;
+                min-height: 120px;
+                max-height: 220px;
+                overflow: auto;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+                font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+                font-size: 14px;
+                line-height: 1.5;
+                background: color-mix(in srgb, var(--alleo-background-color) 90%, var(--alleo-text-color));
+            }
+        </style>
+    </head>
+    <body>
+        <EWidgetSDK />
+
+        <main class="widget">
+            <h1>Board object content</h1>
+
+            <div class="controls">
+                <div class="field">
+                    <label for="index">Index (1-based)</label>
+                    <input type="number" id="index" min="1" value="1" />
+                </div>
+
+                <div class="field">
+                    <label id="format-label">Format</label>
+                    <div class="dropdown" id="format-dropdown" data-open="false">
+                        <button
+                            type="button"
+                            class="dropdown__button"
+                            id="format-button"
+                            aria-haspopup="listbox"
+                            aria-expanded="false"
+                            aria-labelledby="format-label format-button"
+                        >
+                            <span id="format-value">text</span>
+                            <svg class="dropdown__chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </button>
+                        <ul class="dropdown__list" id="format-list" role="listbox" aria-label="Format"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button type="button" id="get">Get</button>
+                <button type="button" id="replace">Replace</button>
+                <button type="button" id="append">Append</button>
+            </div>
+
+            <textarea id="text" placeholder="Text to replace or append, and where Get results appear…"></textarea>
+
+            <pre class="log" id="log" role="log" aria-live="polite"></pre>
+        </main>
+
+        <script>
+            /**
+             * Reads and writes the text of a whitelisted board object (get / replace /
+             * append) and reports outcomes through the log and outgoing actions.
+             */
+            class BoardObjectContentWidget {
+                /* =============== Configuration =============== */
+
+                /** @type {number} Fallback whitelist index (1-based). */
+                defaultIndex = settings.defaultIndex
+
+                /** @type {string[]} Selectable content formats. */
+                formats = settings.formats
+
+                /** @type {string} Currently selected format. */
+                format = settings.defaultFormat
+
+                /** @type {number} Maximum number of lines kept in the log. */
+                maxLogLines = settings.maxLogLines
+
+                /* =============== End Configuration =============== */
+
+                /**
+                 * Stores DOM references used by the controller.
+                 * @param {Record<string, HTMLElement>} elements Named DOM elements.
+                 */
+                constructor(elements) {
+                    /** @type {Record<string, HTMLElement>} Named DOM elements. */
+                    this.el = elements
+                }
+
+                /**
+                 * Builds the dropdown, wires listeners, registers error handling,
+                 * and initializes the SDK.
+                 */
+                async start() {
+                    this.buildFormatOptions()
+                    this.bindEvents()
+                    alleo.onError(({ index, error, requestId }) => this.handleError(index, error, requestId))
+                    alleo.onIncomingAction((payload) => this.handleIncomingAction(payload))
+                    await alleo.initialize()
+                    console.log('[BoardObjectContentWidget.start] Widget initialized')
+                }
+
+                /**
+                 * Renders the custom format dropdown options.
+                 */
+                buildFormatOptions() {
+                    this.el.formatList.textContent = ''
+                    this.formats.forEach((format) => {
+                        const option = document.createElement('li')
+                        option.className = 'dropdown__option'
+                        option.role = 'option'
+                        option.textContent = format
+                        option.dataset.value = format
+                        option.setAttribute('aria-selected', String(format === this.format))
+                        option.addEventListener('click', () => this.selectFormat(format))
+                        this.el.formatList.append(option)
+                    })
+                }
+
+                /**
+                 * Attaches touch/click handlers for the dropdown and action buttons.
+                 */
+                bindEvents() {
+                    this.el.formatButton.addEventListener('click', () => this.toggleDropdown())
+                    document.addEventListener('click', (event) => {
+                        if (!this.el.formatDropdown.contains(event.target)) this.setDropdownOpen(false)
+                    })
+                    this.el.get.addEventListener('click', () => this.getContent())
+                    this.el.replace.addEventListener('click', () => this.writeContent('replace'))
+                    this.el.append.addEventListener('click', () => this.writeContent('append'))
+                }
+
+                /**
+                 * Toggles the custom dropdown open/closed.
+                 */
+                toggleDropdown() {
+                    this.setDropdownOpen(this.el.formatDropdown.dataset.open !== 'true')
+                }
+
+                /**
+                 * Opens or closes the dropdown.
+                 * @param {boolean} isOpen Whether the dropdown should be open.
+                 */
+                setDropdownOpen(isOpen) {
+                    this.el.formatDropdown.dataset.open = String(isOpen)
+                    this.el.formatButton.setAttribute('aria-expanded', String(isOpen))
+                }
+
+                /**
+                 * Selects a content format and updates the dropdown UI.
+                 * @param {string} format Chosen format.
+                 */
+                selectFormat(format) {
+                    this.format = format
+                    this.el.formatValue.textContent = format
+                    this.setDropdownOpen(false)
+                    this.el.formatList.querySelectorAll('.dropdown__option').forEach((option) => {
+                        option.setAttribute('aria-selected', String(option.dataset.value === format))
+                    })
+                    console.log('[BoardObjectContentWidget.selectFormat]', format)
+                }
+
+                /** @returns {number} The selected whitelist index (1-based), or the default. */
+                get index() {
+                    return Number(this.el.index.value) || this.defaultIndex
+                }
+
+                /**
+                 * Reads the whitelisted object's text and shows it in the textarea.
+                 */
+                async getContent() {
+                    const { index, format } = this
+                    this.log(`getBoardObjectContent(${index}, { format: '${format}' })…`)
+                    try {
+                        const content = await alleo.getBoardObjectContent(index, { format })
+                        this.el.text.value = content.join('\n')
+                        this.log('content received', content)
+                        alleo.triggerAction('object-read', { index })
+                    } catch (error) {
+                        this.log('error: ' + (error?.message ?? error))
+                    }
+                }
+
+                /**
+                 * Replaces or appends the whitelisted object's text.
+                 * @param {'replace' | 'append'} mode Write mode.
+                 */
+                writeContent(mode) {
+                    const { index, format } = this
+                    const text = this.el.text.value
+                    if (mode === 'replace') {
+                        alleo.replaceBoardObjectContent(index, text, { format })
+                        alleo.triggerAction('object-replaced', { index })
+                    } else {
+                        alleo.appendBoardObjectContent(index, text, { format })
+                        alleo.triggerAction('object-appended', { index })
+                    }
+                    this.log(`${mode}BoardObjectContent(${index}) sent`)
+                }
+
+                /**
+                 * Handles the incoming read-object action.
+                 * @param {{ actionId?: string, data?: Record<string, unknown> }} payload Incoming payload.
+                 */
+                handleIncomingAction(payload) {
+                    if (payload?.actionId !== 'read-object') return
+                    const index = Number(payload.data?.index)
+                    if (Number.isFinite(index) && index > 0) this.el.index.value = String(index)
+                    void this.getContent()
+                }
+
+                /**
+                 * Logs a board-object error reported by the SDK.
+                 * @param {number} [index] Whitelist index that failed.
+                 * @param {string} [error] Error message.
+                 * @param {string} [requestId] Correlation id of the failed request.
+                 */
+                handleError(index, error, requestId) {
+                    this.log(`boardObjectError #${index} (requestId=${requestId})`, error)
+                    console.error('[BoardObjectContentWidget.handleError]', index, error)
+                }
+
+                /**
+                 * Prepends a line to the on-screen log, trimmed to maxLogLines.
+                 * @param {string} message Text to log.
+                 * @param {unknown} [data] Optional value appended as JSON.
+                 */
+                log(message, data) {
+                    const line = data !== undefined ? `${message} ${JSON.stringify(data)}` : message
+                    this.el.log.textContent = `${line}\n${this.el.log.textContent}`
+                        .split('\n')
+                        .slice(0, this.maxLogLines)
+                        .join('\n')
+                }
+            }
+
+            /** @type {Record<string, HTMLElement>} Named DOM elements used by the widget. */
+            const elements = {
+                index: document.getElementById('index'),
+                formatDropdown: document.getElementById('format-dropdown'),
+                formatButton: document.getElementById('format-button'),
+                formatValue: document.getElementById('format-value'),
+                formatList: document.getElementById('format-list'),
+                get: document.getElementById('get'),
+                replace: document.getElementById('replace'),
+                append: document.getElementById('append'),
+                text: document.getElementById('text'),
+                log: document.getElementById('log'),
+            }
+
+            /** @type {BoardObjectContentWidget} Active widget controller. */
+            const boardObjectContentWidget = new BoardObjectContentWidget(elements)
+
+            void boardObjectContentWidget.start()
+        </script>
+    </body>
 </html>
 
-<!--
-WIDGETSETTINGS:
+<!-- WIDGETSETTINGS:
 {
     "iframeAllowScripts": true,
     "iframeAllowForms": false,
@@ -244,15 +496,54 @@ WIDGETSETTINGS:
     "iframeReferrerPolicy": "no-referrer",
     "iframeUnloadWhenOffScreen": true,
     "enableIframeCommunication": true,
+    "enableGetParams": false,
+    "enableGetUser": false,
     "enableIframeFuncAddContent": false,
     "enableSyncedStatus": false,
     "enableIframeFuncBoardObjectContent": true,
-    "boardObjectWhitelist": [],
-    "incomingActions": [],
-    "outgoingActions": [],
-    "backgroundColor": "#FFFFFF",
-    "overwriteTextColor": false,
-    "textColor": "",
-    "iframeAllowMicrophone": false
+    "enableBackendProxy": false,
+    "incomingActions": [
+        {
+            "id": "read-object",
+            "label": "Read object",
+            "inputData": [
+                { "id": "index", "label": "Index", "type": "Number" }
+            ]
+        }
+    ],
+    "outgoingActions": [
+        { "id": "onloaded", "label": "Loaded" },
+        {
+            "id": "object-read",
+            "label": "Object read",
+            "outputData": [
+                { "id": "index", "label": "Index", "type": "Number" }
+            ]
+        },
+        {
+            "id": "object-replaced",
+            "label": "Object replaced",
+            "outputData": [
+                { "id": "index", "label": "Index", "type": "Number" }
+            ]
+        },
+        {
+            "id": "object-appended",
+            "label": "Object appended",
+            "outputData": [
+                { "id": "index", "label": "Index", "type": "Number" }
+            ]
+        }
+    ],
+    "backgroundColor": "#051825",
+    "textColor": "#f9fff6",
+    "primaryColor": "#6da8ff",
+    "font": "",
+    "enabledColorPickers": { "background": true, "primary": true, "text": true, "font": false },
+    "iframeAllowMicrophone": false,
+    "requiredAPIfunctions": ["initialize", "getBoardObjectContent", "replaceBoardObjectContent", "appendBoardObjectContent", "onError", "triggerAction", "onIncomingAction"],
+    "version": "2.20260803",
+    "DefaultWidth": 680,
+    "DefaultHeight": 560
 }
 -->

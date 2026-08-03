@@ -1,0 +1,442 @@
+<!-- WIDGETNAME:
+User Profile
+-->
+<!-- WIDGETDESCRIPTION:
+Shows every available field of the current Alleo board user's profile, including organization and activity times.
+-->
+<!-- WIDGETHELP:
+## What it does
+
+This widget reads `alleo.user` and displays all available profile data for the
+currently logged-in board user: name fields, email, organization, activity and
+login times, and the user's display color. It is a handy reference for what user
+information an E-widget can personalise itself with.
+
+## How to use it
+
+1. Enable **Allow access to the current user profile** in the widget's Security
+   settings.
+2. Load the board while signed in. The widget renders an avatar built from the
+   user's initials and display color, followed by every populated profile field.
+3. When the profile loads it fires `profile-loaded` with the display name and
+   email so board automations can react.
+
+Send the `refresh-profile` incoming action to re-render the profile on demand.
+
+## Settings
+
+Board editors can adjust the background, primary, and text colors from the widget
+settings. No configuration is required for the profile lookup itself.
+
+## Notes
+
+The profile is captured once at startup and stays stable for the lifetime of the
+embed. Fields the user has not set are omitted. To respect the sandbox rule
+against external images, the user's `imageUrl` is shown as text rather than
+loaded as a picture; the avatar is drawn from the initials and display color.
+-->
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>User Profile</title>
+
+        <!-- =============== Configuration =============== -->
+        <script>
+            /** User-tunable values. Edit these to customize the widget. */
+            const settings = {
+                /** @type {string} Heading shown above the profile. */
+                heading: 'Current user',
+                /** @type {string} Message shown when no profile data is available. */
+                emptyMessage:
+                    'No user profile is available. Enable "Allow access to the current user profile" in the widget settings and sign in to the board.',
+                /**
+                 * @type {Array<{ key: string, label: string, type?: 'date' }>}
+                 * Ordered profile fields to display. `key` uses dot notation for nested values.
+                 */
+                fields: [
+                    { key: 'firstName', label: 'First name' },
+                    { key: 'lastName', label: 'Last name' },
+                    { key: 'displayName', label: 'Display name' },
+                    { key: 'email', label: 'Email' },
+                    { key: 'organization.name', label: 'Organization' },
+                    { key: 'organization.id', label: 'Organization ID' },
+                    { key: 'displayColor', label: 'Display color' },
+                    { key: 'lastActivityAt', label: 'Last activity', type: 'date' },
+                    { key: 'lastLoginAt', label: 'Last login', type: 'date' },
+                    { key: 'imageUrl', label: 'Image URL' },
+                ],
+            }
+        </script>
+        <style>
+            body {
+                /* Defaults — alleo.initialize() overrides these with the configured theme. */
+                --alleo-background-color: #051825;
+                --alleo-text-color: #f9fff6;
+                --alleo-primary-color: #6da8ff;
+                --alleo-font: 'PT Root UI', Roboto, 'Helvetica Neue', 'Ubuntu Sans', Helvetica, Verdana, sans-serif;
+
+                /** Fixed content width; contracts only when the iframe is narrower. */
+                --content-width: 560px;
+            }
+        </style>
+        <!-- ============= END Configuration ============= -->
+
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                min-height: 100%;
+                margin: 0;
+            }
+
+            body {
+                display: grid;
+                place-items: center;
+                min-height: 100vh;
+                padding: 16px;
+                font-family: var(--alleo-font, sans-serif);
+                font-size: 16px;
+                background: var(--alleo-background-color);
+                color: var(--alleo-text-color);
+            }
+
+            .widget {
+                display: grid;
+                gap: 16px;
+                width: min(100%, var(--content-width));
+            }
+
+            .identity {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+
+            .avatar {
+                flex: 0 0 auto;
+                display: grid;
+                place-items: center;
+                width: 64px;
+                height: 64px;
+                border-radius: 50%;
+                font-size: 24px;
+                font-weight: 700;
+                color: #051825;
+                background: var(--avatar-color, var(--alleo-primary-color));
+            }
+
+            .identity__text {
+                display: grid;
+                gap: 2px;
+                min-width: 0;
+            }
+
+            h1 {
+                margin: 0;
+                font-size: 22px;
+                line-height: 1.25;
+                overflow-wrap: anywhere;
+            }
+
+            .subtitle {
+                margin: 0;
+                color: color-mix(in srgb, var(--alleo-text-color) 72%, var(--alleo-background-color));
+                overflow-wrap: anywhere;
+            }
+
+            .fields {
+                display: grid;
+                gap: 8px;
+                margin: 0;
+            }
+
+            .row {
+                display: grid;
+                grid-template-columns: minmax(120px, 38%) minmax(0, 1fr);
+                gap: 12px;
+                padding: 12px 14px;
+                background: color-mix(in srgb, var(--alleo-background-color) 86%, var(--alleo-text-color));
+            }
+
+            dt {
+                margin: 0;
+                color: color-mix(in srgb, var(--alleo-text-color) 66%, var(--alleo-background-color));
+            }
+
+            dd {
+                margin: 0;
+                overflow-wrap: anywhere;
+            }
+
+            .swatch {
+                display: inline-block;
+                width: 14px;
+                height: 14px;
+                margin-right: 8px;
+                vertical-align: -2px;
+                border-radius: 3px;
+            }
+
+            .empty {
+                padding: 16px;
+                line-height: 1.5;
+                background: color-mix(in srgb, var(--alleo-background-color) 86%, var(--alleo-text-color));
+                color: color-mix(in srgb, var(--alleo-text-color) 78%, var(--alleo-background-color));
+            }
+
+            .hidden {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <EWidgetSDK />
+
+        <main class="widget">
+            <div class="identity" id="identity">
+                <div class="avatar" id="avatar" aria-hidden="true">?</div>
+                <div class="identity__text">
+                    <h1 id="name">Current user</h1>
+                    <p class="subtitle" id="subtitle"></p>
+                </div>
+            </div>
+            <dl class="fields" id="fields"></dl>
+            <p class="empty hidden" id="empty"></p>
+        </main>
+
+        <script>
+            /**
+             * Reads alleo.user and displays every available profile field for the
+             * current board user.
+             */
+            class UserProfileWidget {
+                /* =============== Configuration =============== */
+
+                /** @type {string} Message shown when no profile data is available. */
+                emptyMessage = settings.emptyMessage
+
+                /** @type {Array<{ key: string, label: string, type?: 'date' }>} Fields to display. */
+                fields = settings.fields
+
+                /* =============== End Configuration =============== */
+
+                /**
+                 * Stores DOM references used by the controller.
+                 * @param {Record<string, HTMLElement>} elements Named DOM elements.
+                 */
+                constructor(elements) {
+                    /** @type {Record<string, HTMLElement>} Named DOM elements. */
+                    this.el = elements
+                }
+
+                /**
+                 * Registers incoming actions and initializes the SDK, then renders
+                 * the profile (available once initialize resolves).
+                 */
+                async start() {
+                    this.el.empty.textContent = this.emptyMessage
+                    alleo.onIncomingAction((payload) => this.handleIncomingAction(payload))
+                    await alleo.initialize()
+                    this.render()
+                    console.log('[UserProfileWidget.start] Widget initialized')
+                }
+
+                /**
+                 * Re-renders the profile when the refresh-profile action is received.
+                 * @param {{ actionId?: string }} payload Incoming payload.
+                 */
+                handleIncomingAction(payload) {
+                    if (payload?.actionId === 'refresh-profile') this.render()
+                }
+
+                /**
+                 * Reads the user profile and renders the identity header and fields.
+                 */
+                render() {
+                    const user = alleo.user || {}
+                    const populated = this.fields
+                        .map((field) => ({ field, value: this.readValue(user, field.key) }))
+                        .filter((entry) => entry.value !== undefined && entry.value !== null && entry.value !== '')
+
+                    const hasData = populated.length > 0
+                    this.el.empty.classList.toggle('hidden', hasData)
+                    this.el.identity.classList.toggle('hidden', !hasData)
+                    this.el.fields.classList.toggle('hidden', !hasData)
+
+                    if (hasData) {
+                        this.renderIdentity(user)
+                        this.renderFields(populated)
+                    }
+
+                    alleo.triggerAction('profile-loaded', {
+                        displayName: this.resolveDisplayName(user),
+                        email: typeof user.email === 'string' ? user.email : '',
+                    })
+                    console.log('[UserProfileWidget.render] rendered', populated.length, 'fields')
+                }
+
+                /**
+                 * Renders the avatar, name, and email subtitle.
+                 * @param {Record<string, any>} user The user profile object.
+                 */
+                renderIdentity(user) {
+                    const displayName = this.resolveDisplayName(user)
+                    this.el.name.textContent = displayName || 'Current user'
+                    this.el.subtitle.textContent = typeof user.email === 'string' ? user.email : ''
+                    this.el.avatar.textContent = this.resolveInitials(user)
+                    if (typeof user.displayColor === 'string' && user.displayColor.trim()) {
+                        this.el.avatar.style.setProperty('--avatar-color', user.displayColor.trim())
+                    }
+                }
+
+                /**
+                 * Renders one row per populated profile field.
+                 * @param {Array<{ field: { label: string, key: string, type?: 'date' }, value: any }>} populated Populated fields.
+                 */
+                renderFields(populated) {
+                    this.el.fields.textContent = ''
+                    populated.forEach(({ field, value }) => {
+                        const row = document.createElement('div')
+                        row.className = 'row'
+
+                        const term = document.createElement('dt')
+                        term.textContent = field.label
+
+                        const description = document.createElement('dd')
+                        this.fillValue(description, field, value)
+
+                        row.append(term, description)
+                        this.el.fields.append(row)
+                    })
+                }
+
+                /**
+                 * Writes a formatted value into a description cell.
+                 * @param {HTMLElement} cell Target cell.
+                 * @param {{ key: string, type?: 'date' }} field Field descriptor.
+                 * @param {any} value Raw field value.
+                 */
+                fillValue(cell, field, value) {
+                    if (field.type === 'date') {
+                        cell.textContent = this.formatDate(value)
+                        return
+                    }
+                    if (field.key === 'displayColor') {
+                        const swatch = document.createElement('span')
+                        swatch.className = 'swatch'
+                        swatch.style.background = String(value)
+                        cell.append(swatch, document.createTextNode(String(value)))
+                        return
+                    }
+                    cell.textContent = String(value)
+                }
+
+                /**
+                 * Reads a possibly-nested value using dot notation.
+                 * @param {Record<string, any>} source Object to read from.
+                 * @param {string} path Dot-separated path (e.g. "organization.name").
+                 * @returns {any} The resolved value, or undefined.
+                 */
+                readValue(source, path) {
+                    return path.split('.').reduce((value, key) => (value == null ? value : value[key]), source)
+                }
+
+                /**
+                 * Resolves the best available display name.
+                 * @param {Record<string, any>} user The user profile object.
+                 * @returns {string} A display name, possibly empty.
+                 */
+                resolveDisplayName(user) {
+                    if (typeof user.displayName === 'string' && user.displayName.trim()) return user.displayName.trim()
+                    return [user.firstName, user.lastName].filter((part) => typeof part === 'string' && part.trim()).join(' ')
+                }
+
+                /**
+                 * Resolves up to two initials for the avatar.
+                 * @param {Record<string, any>} user The user profile object.
+                 * @returns {string} One or two uppercase initials, or "?".
+                 */
+                resolveInitials(user) {
+                    const source = this.resolveDisplayName(user) || (typeof user.email === 'string' ? user.email : '')
+                    const parts = source.split(/[\s@._-]+/).filter(Boolean)
+                    const initials = parts.slice(0, 2).map((part) => part[0].toUpperCase()).join('')
+                    return initials || '?'
+                }
+
+                /**
+                 * Formats a date-like value.
+                 * @param {any} value A Date, ISO string, or timestamp.
+                 * @returns {string} A locale string, or the raw value on failure.
+                 */
+                formatDate(value) {
+                    const date = value instanceof Date ? value : new Date(value)
+                    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString()
+                }
+            }
+
+            /** @type {Record<string, HTMLElement>} Named DOM elements used by the widget. */
+            const elements = {
+                identity: document.getElementById('identity'),
+                avatar: document.getElementById('avatar'),
+                name: document.getElementById('name'),
+                subtitle: document.getElementById('subtitle'),
+                fields: document.getElementById('fields'),
+                empty: document.getElementById('empty'),
+            }
+
+            /** @type {UserProfileWidget} Active widget controller. */
+            const userProfileWidget = new UserProfileWidget(elements)
+
+            void userProfileWidget.start()
+        </script>
+    </body>
+</html>
+
+<!-- WIDGETSETTINGS:
+{
+    "iframeAllowScripts": true,
+    "iframeAllowForms": false,
+    "iframeAllowOrientationLock": false,
+    "iframeAllowPointerLock": false,
+    "iframeDisableUserActions": false,
+    "iframeDisableScrolling": false,
+    "iframeReferrerPolicy": "no-referrer",
+    "iframeUnloadWhenOffScreen": true,
+    "enableIframeCommunication": true,
+    "enableGetParams": false,
+    "enableGetUser": true,
+    "enableIframeFuncAddContent": false,
+    "enableSyncedStatus": false,
+    "enableIframeFuncBoardObjectContent": false,
+    "enableBackendProxy": false,
+    "incomingActions": [
+        { "id": "refresh-profile", "label": "Refresh profile" }
+    ],
+    "outgoingActions": [
+        { "id": "onloaded", "label": "Loaded" },
+        {
+            "id": "profile-loaded",
+            "label": "Profile loaded",
+            "outputData": [
+                { "id": "displayName", "label": "Display name", "type": "Text" },
+                { "id": "email", "label": "Email", "type": "Text" }
+            ]
+        }
+    ],
+    "backgroundColor": "#051825",
+    "textColor": "#f9fff6",
+    "primaryColor": "#6da8ff",
+    "font": "",
+    "enabledColorPickers": { "background": true, "primary": true, "text": true, "font": false },
+    "iframeAllowMicrophone": false,
+    "requiredAPIfunctions": ["initialize", "user", "triggerAction", "onIncomingAction"],
+    "version": "1.20260728",
+    "DefaultWidth": 620,
+    "DefaultHeight": 520
+}
+-->

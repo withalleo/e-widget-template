@@ -1,0 +1,309 @@
+<!-- WIDGETNAME:
+URL Parameters
+-->
+<!-- WIDGETDESCRIPTION:
+Lists every shared __embed__ URL parameter forwarded from the page hosting the Alleo board.
+-->
+<!-- WIDGETHELP:
+## What it does
+
+This widget reads and lists all URL parameters that the page hosting Alleo shares
+with the board. Only query parameters whose name starts with `__embed__` are
+forwarded, and Alleo strips that prefix before exposing them through
+`alleo.getParams`. Use it to verify what per-session values (for example a
+`userId` or `lang`) reach your widgets.
+
+## How to use it
+
+1. Enable **Share "__embed__" URL parameters with enclosed content** in the
+   widget's Security settings.
+2. Add `__embed__`-prefixed query parameters to the URL of the page that embeds
+   the Alleo board, e.g. `?__embed__userId=42&__embed__lang=en`.
+3. Load the board. The widget lists each shared parameter and its value, and
+   fires `params-listed` with the number of parameters found.
+
+Send the `refresh-list` incoming action to re-render the list on demand.
+
+## Settings
+
+Board editors can adjust the background, primary, and text colors from the widget
+settings. No configuration is required for the parameter lookup itself.
+
+## Notes
+
+Parameter values are captured once at startup and stay stable for the lifetime of
+the embed. When the sharing setting is disabled, or no `__embed__` parameters are
+present, the widget shows an empty-state message instead of a list.
+-->
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>URL Parameters</title>
+
+        <!-- =============== Configuration =============== -->
+        <script>
+            /** User-tunable values. Edit these to customize the widget. */
+            const settings = {
+                /** @type {string} Heading shown above the parameter list. */
+                heading: 'Shared URL parameters',
+                /** @type {string} Message shown when no parameters are available. */
+                emptyMessage:
+                    'No __embed__ parameters were shared. Enable "Share __embed__ URL parameters" and add __embed__-prefixed query params to the host page URL.',
+            }
+        </script>
+        <style>
+            body {
+                /* Defaults — alleo.initialize() overrides these with the configured theme. */
+                --alleo-background-color: #051825;
+                --alleo-text-color: #f9fff6;
+                --alleo-primary-color: #6da8ff;
+                --alleo-font: 'PT Root UI', Roboto, 'Helvetica Neue', 'Ubuntu Sans', Helvetica, Verdana, sans-serif;
+
+                /** Fixed content width; contracts only when the iframe is narrower. */
+                --content-width: 560px;
+            }
+        </style>
+        <!-- ============= END Configuration ============= -->
+
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                min-height: 100%;
+                margin: 0;
+            }
+
+            body {
+                display: grid;
+                place-items: center;
+                min-height: 100vh;
+                padding: 16px;
+                font-family: var(--alleo-font, sans-serif);
+                font-size: 16px;
+                background: var(--alleo-background-color);
+                color: var(--alleo-text-color);
+            }
+
+            .widget {
+                display: grid;
+                gap: 14px;
+                width: min(100%, var(--content-width));
+            }
+
+            .header {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 12px;
+            }
+
+            h1 {
+                margin: 0;
+                font-size: 22px;
+                line-height: 1.25;
+            }
+
+            .count {
+                font-variant-numeric: tabular-nums;
+                color: color-mix(in srgb, var(--alleo-text-color) 68%, var(--alleo-background-color));
+            }
+
+            .list {
+                display: grid;
+                gap: 8px;
+                margin: 0;
+            }
+
+            .row {
+                display: grid;
+                grid-template-columns: minmax(120px, 40%) minmax(0, 1fr);
+                gap: 12px;
+                padding: 12px 14px;
+                background: color-mix(in srgb, var(--alleo-background-color) 86%, var(--alleo-text-color));
+            }
+
+            dt {
+                margin: 0;
+                font-weight: 700;
+                overflow-wrap: anywhere;
+            }
+
+            dd {
+                margin: 0;
+                overflow-wrap: anywhere;
+                color: color-mix(in srgb, var(--alleo-text-color) 88%, var(--alleo-background-color));
+            }
+
+            .empty {
+                padding: 16px;
+                line-height: 1.5;
+                background: color-mix(in srgb, var(--alleo-background-color) 86%, var(--alleo-text-color));
+                color: color-mix(in srgb, var(--alleo-text-color) 78%, var(--alleo-background-color));
+            }
+
+            .hidden {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <EWidgetSDK />
+
+        <main class="widget">
+            <div class="header">
+                <h1 id="heading">Shared URL parameters</h1>
+                <span class="count" id="count" aria-live="polite"></span>
+            </div>
+            <dl class="list" id="list"></dl>
+            <p class="empty hidden" id="empty"></p>
+        </main>
+
+        <script>
+            /**
+             * Reads alleo.getParams and lists every shared __embed__ URL parameter.
+             */
+            class UrlParamsWidget {
+                /* =============== Configuration =============== */
+
+                /** @type {string} Heading shown above the parameter list. */
+                heading = settings.heading
+
+                /** @type {string} Message shown when no parameters are available. */
+                emptyMessage = settings.emptyMessage
+
+                /* =============== End Configuration =============== */
+
+                /**
+                 * Stores DOM references used by the controller.
+                 * @param {Record<string, HTMLElement>} elements Named DOM elements.
+                 */
+                constructor(elements) {
+                    /** @type {Record<string, HTMLElement>} Named DOM elements. */
+                    this.el = elements
+                }
+
+                /**
+                 * Registers incoming actions and initializes the SDK, then renders
+                 * the parameters (available once initialize resolves).
+                 */
+                async start() {
+                    this.el.heading.textContent = this.heading
+                    this.el.empty.textContent = this.emptyMessage
+                    alleo.onIncomingAction((payload) => this.handleIncomingAction(payload))
+                    await alleo.initialize()
+                    this.render()
+                    console.log('[UrlParamsWidget.start] Widget initialized')
+                }
+
+                /**
+                 * Re-renders the list when the refresh-list action is received.
+                 * @param {{ actionId?: string }} payload Incoming payload.
+                 */
+                handleIncomingAction(payload) {
+                    if (payload?.actionId === 'refresh-list') this.render()
+                }
+
+                /**
+                 * Reads the shared parameters and renders them, then reports the count.
+                 */
+                render() {
+                    const params = alleo.getParams || {}
+                    const entries = Object.entries(params)
+
+                    this.el.list.textContent = ''
+                    this.el.count.textContent = entries.length === 1 ? '1 parameter' : `${entries.length} parameters`
+
+                    const hasEntries = entries.length > 0
+                    this.el.empty.classList.toggle('hidden', hasEntries)
+                    this.el.list.classList.toggle('hidden', !hasEntries)
+
+                    entries.forEach(([key, value]) => this.el.list.append(this.buildRow(key, value)))
+
+                    alleo.triggerAction('params-listed', { count: entries.length })
+                    console.log('[UrlParamsWidget.render] listed', entries.length, 'parameters')
+                }
+
+                /**
+                 * Builds a key/value row.
+                 * @param {string} key Parameter name (prefix already stripped).
+                 * @param {string} value Parameter value.
+                 * @returns {HTMLDivElement} The row element.
+                 */
+                buildRow(key, value) {
+                    const row = document.createElement('div')
+                    row.className = 'row'
+
+                    const term = document.createElement('dt')
+                    term.textContent = key
+
+                    const description = document.createElement('dd')
+                    description.textContent = String(value)
+
+                    row.append(term, description)
+                    return row
+                }
+            }
+
+            /** @type {Record<string, HTMLElement>} Named DOM elements used by the widget. */
+            const elements = {
+                heading: document.getElementById('heading'),
+                count: document.getElementById('count'),
+                list: document.getElementById('list'),
+                empty: document.getElementById('empty'),
+            }
+
+            /** @type {UrlParamsWidget} Active widget controller. */
+            const urlParamsWidget = new UrlParamsWidget(elements)
+
+            void urlParamsWidget.start()
+        </script>
+    </body>
+</html>
+
+<!-- WIDGETSETTINGS:
+{
+    "iframeAllowScripts": true,
+    "iframeAllowForms": false,
+    "iframeAllowOrientationLock": false,
+    "iframeAllowPointerLock": false,
+    "iframeDisableUserActions": false,
+    "iframeDisableScrolling": false,
+    "iframeReferrerPolicy": "no-referrer",
+    "iframeUnloadWhenOffScreen": true,
+    "enableIframeCommunication": true,
+    "enableGetParams": true,
+    "enableGetUser": false,
+    "enableIframeFuncAddContent": false,
+    "enableSyncedStatus": false,
+    "enableIframeFuncBoardObjectContent": false,
+    "enableBackendProxy": false,
+    "incomingActions": [
+        { "id": "refresh-list", "label": "Refresh list" }
+    ],
+    "outgoingActions": [
+        { "id": "onloaded", "label": "Loaded" },
+        {
+            "id": "params-listed",
+            "label": "Params listed",
+            "outputData": [
+                { "id": "count", "label": "Count", "type": "Number" }
+            ]
+        }
+    ],
+    "backgroundColor": "#051825",
+    "textColor": "#f9fff6",
+    "primaryColor": "#6da8ff",
+    "font": "",
+    "enabledColorPickers": { "background": true, "primary": true, "text": true, "font": false },
+    "iframeAllowMicrophone": false,
+    "requiredAPIfunctions": ["initialize", "getParams", "triggerAction", "onIncomingAction"],
+    "version": "1.20260728",
+    "DefaultWidth": 620,
+    "DefaultHeight": 460
+}
+-->
