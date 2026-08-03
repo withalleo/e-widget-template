@@ -25,7 +25,7 @@ The recommended file name suffix is `.Alleo-eWidget.txt` (`.Alleo-eWidget` is al
 
 Append the footer at the **very end** of the file, after the closing `</html>`.
 
-> **The footer is mandatory and so is every key in it.** Unlike older guidance, the footer is **not** optional decoration and you may **not** cherry-pick keys. Every widget you generate **must** emit the footer with the **complete set of required keys** below - present, explicitly set, every time. When a feature is not used by the widget, still include its key and set it to its "off" value (`false`, `[]`, or the documented empty/default value). Never omit a required key to "fall back to a default".
+> **The footer is mandatory and so is every key in it.** Unlike older guidance, the footer is **not** optional decoration, and you may **not** cherry-pick keys. Every widget you generate **must** emit the footer with the **complete set of required keys** below - present, explicitly set, every time. When a feature is not used by the widget, still include its key and set it to its "off" value (`false`, `[]`, or the documented empty/default value). Never omit a required key to "fall back to a default".
 
 ### Required keys - always present in every footer
 
@@ -102,8 +102,9 @@ Hard requirements - the import parser will silently reject the file (or ignore t
 - The comment **must** contain the literal token `WIDGETSETTINGS:` immediately before the JSON. Whitespace/newlines around it are fine.
 - The content between `WIDGETSETTINGS:` and `-->` **must be a single valid JSON object** (`{ ... }`). It is parsed with `JSON.parse`; trailing commas, comments, single quotes, or `undefined` will make parsing fail and the whole import is rejected.
 - The JSON **must not** contain the sequence `-->` anywhere inside string values, or the comment terminates early. Avoid embedding raw HTML comments in any string setting.
-- Only include keys from the **allowed settings list** below. Any key outside that list throws an error and aborts the import - do **not** add `htmlContent`, `sourceType`, `url`, `fileId`, or `overwriteTextColor` (a legacy key that no longer exists); those are derived automatically or unsupported.
-- **Every key in the "Required keys" table above is mandatory** - include all of them in every footer, with an explicit value. Set unused features to their "off" value (`false` / `[]` / empty), never omit them. Keys not in that table (e.g. `newContentContainer`, `boardObjectWhitelist`, `DefaultWidth`, `DefaultHeight`) remain optional and are added only when relevant.
+- Only include keys from the **allowed settings list** below - any other key is dropped on import. Do **not** add `htmlContent`, `sourceType`, `url`, `fileId`, `overwriteTextColor` (a legacy key that no longer exists), `boardObjectWhitelist`, or `newContentContainer`; those are derived automatically, unsupported, or chosen by the user in the import dialog.
+- **Every key in the "Required keys" table above is mandatory** - include all of them in every footer, with an explicit value. Set unused features to their "off" value (`false` / `[]` / empty), never omit them. Keys not in that table (e.g. `DefaultWidth`, `DefaultHeight`, `allowedProtectedBackends`, `allowedPublicUrls`) remain optional and are added only when relevant.
+- **Never put `boardObjectWhitelist` or `newContentContainer` in the footer.** They reference board object ids you cannot know, are not importable, and are chosen by the user in the import dialog instead.
 - `DefaultWidth` and `DefaultHeight` are optional but **must be supplied together** as positive numbers when present; on import they set the widget's pixel size via `setSize`. Use the fixed design size you built for (default `1280`×`720`).
 
 Separate the HTML and the footer with a blank line for readability (the parser trims trailing whitespace from the HTML automatically).
@@ -116,55 +117,57 @@ Only the following keys may appear in the footer JSON. Use the exact key names, 
 
 ### Board features & SDK
 
-| Key                                  | Type                               | Default | Meaning                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ------------------------------------ | ---------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enableIframeCommunication`          | `boolean`                          | `false` | Master switch for the Alleo SDK bridge. **Must be `true`** if the HTML uses `alleo.*` (actions, synced status, add content, board object content, mic).                                                                                                                                                                                                                                                        |
-| `enableIframeFuncAddContent`         | `boolean`                          | `false` | Allows `alleo.addContent(...)`. Requires `enableIframeCommunication: true`.                                                                                                                                                                                                                                                                                                                                    |
-| `newContentContainer`                | `string` (board object id) or omit | -       | Optional container object that newly added content is placed into. Leave it out unless the user picked a specific container; you cannot invent a valid id.                                                                                                                                                                                                                                                     |
-| `enableSyncedStatus`                 | `boolean`                          | `false` | Allows `alleo.setSyncedStatus` / `requestSyncedStatus` / `onSyncedStatusUpdate`. Requires `enableIframeCommunication: true`.                                                                                                                                                                                                                                                                                   |
-| `enableIframeFuncBoardObjectContent` | `boolean`                          | `false` | Allows reading/writing whitelisted board objects. Requires `enableIframeCommunication: true`.                                                                                                                                                                                                                                                                                                                  |
-| `boardObjectWhitelist`               | `string[]` (board object ids)      | `[]`    | Ordered list of board objects the widget may read/write. The 1-based index in this array is what the HTML passes to `alleo.getBoardObjectContent(index, ...)`. You usually cannot know real ids - leave it `[]` and tell the user to fill it in.                                                                                                                                                               |
-| `iframeAllowMicrophone`              | `boolean`                          | `false` | Enables the `alleo.mic` bridge. Requires `enableIframeCommunication: true`.                                                                                                                                                                                                                                                                                                                                    |
-| `enableGetParams`                    | `boolean`                          | `false` | Exposes `alleo.getParams` - the parent page's URL query parameters prefixed with `__embed__` (prefix stripped from the keys). Requires `enableIframeCommunication: true`; set `true` if the HTML reads `alleo.getParams`.                                                                                                                                                                                      |
-| `enableGetUser`                      | `boolean`                          | `false` | Exposes `alleo.user` - the profile of the currently logged-in board user (name, email, organization, etc.). Requires `enableIframeCommunication: true`; set `true` if the HTML reads `alleo.user`.                                                                                                                                                                                                             |
-| `enableBackendProxy`                 | `boolean`                          | `false` | Master switch for `alleo.fetchProtectedUrlJSON` / `fetchProtectedUrlText` / `fetchProtectedUrlBinary`. **Must be `true`** if the HTML calls any of them for any reason - including a public/unauthenticated fetch with `keyId: null` (CORS-bypass proxy), not just authenticated calls. Requires `enableIframeCommunication: true`. See [Protected backend connections](#protected-backend-connections) below. |
+| Key                                  | Type      | Default | Meaning                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------ | --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `enableIframeCommunication`          | `boolean` | `false` | Master switch for the Alleo SDK bridge. **Must be `true`** if the HTML uses `alleo.*` (actions, synced status, add content, board object content, mic).                                                                                                                                                                                                                                    |
+| `enableIframeFuncAddContent`         | `boolean` | `false` | Allows `alleo.addContent(...)`. Requires `enableIframeCommunication: true`. The target container (`newContentContainer`) is **not** a footer key - the user picks it in the import dialog.                                                                                                                                                                                                 |
+| `enableSyncedStatus`                 | `boolean` | `false` | Allows `alleo.setSyncedStatus` / `requestSyncedStatus` / `onSyncedStatusUpdate`. Requires `enableIframeCommunication: true`.                                                                                                                                                                                                                                                               |
+| `enableIframeFuncBoardObjectContent` | `boolean` | `false` | Allows reading/writing whitelisted board objects. Requires `enableIframeCommunication: true`. The whitelist itself (`boardObjectWhitelist`) is **not** a footer key - the user fills it in the import dialog, and the HTML's 1-based indices refer to that list.                                                                                                                           |
+| `iframeAllowMicrophone`              | `boolean` | `false` | Enables the `alleo.mic` bridge. Requires `enableIframeCommunication: true`.                                                                                                                                                                                                                                                                                                                |
+| `enableGetParams`                    | `boolean` | `false` | Exposes `alleo.getParams` - the parent page's URL query parameters prefixed with `__embed__` (prefix stripped from the keys). Requires `enableIframeCommunication: true`; set `true` if the HTML reads `alleo.getParams`.                                                                                                                                                                  |
+| `enableGetUser`                      | `boolean` | `false` | Exposes `alleo.user` - the profile of the currently logged-in board user (name, email, organization, etc.). Requires `enableIframeCommunication: true`; set `true` if the HTML reads `alleo.user`.                                                                                                                                                                                         |
+| `enableBackendProxy`                 | `boolean` | `false` | Master switch for `alleo.fetchProtectedUrlJSON` / `fetchProtectedUrlText` / `fetchProtectedUrlBinary`. **Must be `true`** if the HTML calls any of them for any reason - including a public/unauthenticated fetch with `keyId: null`, not just authenticated calls. Requires `enableIframeCommunication: true`. See [Protected backend connections](#protected-backend-connections) below. |
 
 ### Required API functions
 
-| Key                    | Type       | Default | Meaning                                                                                                                                                                                                                                                                                                   |
-| ---------------------- | ---------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Key                    | Type       | Default | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------------- | ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `requiredAPIfunctions` | `string[]` | `[]`    | Every `alleo.*` endpoint the HTML actually uses, listed **without** the `alleo.` prefix - this includes function calls **and** property reads like `alleo.getParams`/`alleo.user`, not just functions (e.g. `["initialize", "triggerAction", "onIncomingAction", "fetchProtectedUrlJSON", "getParams", "user"]`). List each name once even if used multiple times. Keep it in sync with the HTML whenever a reference is added or removed. |
 
 ### Protected backend connections
 
-Use this feature whenever the generated HTML needs to fetch anything from the internet - it's the **only** supported way to do this, whether the request is public/unauthenticated (`keyId: null`, routed through a CORS-bypass proxy) or requires an **API key, bearer token, or any other credential** (a real `keyId`). See [`LIBRARY.md`](./LIBRARY.md#fetchprotectedurljson--fetchprotectedurltext--fetchprotectedurlbinary) for the full `alleo.fetchProtectedUrlJSON` / `fetchProtectedUrlText` / `fetchProtectedUrlBinary` reference. Always prefer this over a plain `fetch()`, and never:
+Use this feature whenever the generated HTML needs to fetch anything from the internet - it's the **only** supported way to do this, whether the request is public/unauthenticated (`keyId: null`) or requires an **API key, bearer token, or any other credential** (a real `keyId`). See [`LIBRARY.md`](./LIBRARY.md#fetchprotectedurljson--fetchprotectedurltext--fetchprotectedurlbinary) for the full `alleo.fetchProtectedUrlJSON` / `fetchProtectedUrlText` / `fetchProtectedUrlBinary` reference. Always prefer this over a plain `fetch()`, and never:
 
 - hard-code an API key/secret anywhere in the generated HTML/JS (it would be visible to anyone who opens the widget's settings or views the page source),
 - ask the user to paste a secret into a `<script>` variable,
 - or pass a secret through the `keyId: null` (public) path - it cannot carry credentials.
 
-| Key                        | Type                                                                                                                                                               | Default | Meaning                                                                                                                                                                                                                                                                 |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `allowedProtectedBackends` | `Record<string, { backendSchema: { method: "QueryParam" \| "Header", template: string, connection: "Http" \| "WebSocket", allowedUrls: [string, ...string[]] } }>` | `{}`    | One entry per non-null `keyId` used in `alleo.fetchProtectedUrl*(keyId, url, init)`. Not needed for calls that pass `keyId: null` (public CORS-proxy fetch). Declares **which endpoints** that `keyId` may call - it never carries the actual secret value (see below). |
+| Key                        | Type                                                                                                                                                                       | Default | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `allowedProtectedBackends` | `Record<string, { backendSchemas: [{ method: "QueryParam" \| "Header", template: string, connection: "Http" \| "WebSocket", allowedUrls: [string, ...string[]] }, ...] }>` | `{}`    | One entry per non-null `keyId` used in `alleo.fetchProtectedUrl*(keyId, url, init)`. Not needed for calls that pass `keyId: null` (public content fetch). Declares **which endpoints** that `keyId` may call - it never carries the actual secret value (see below).                                                                                                                                                                                                 |
+| `allowedPublicUrls`        | `string[]`                                                                                                                                                                 | `[]`    | **Required whenever the HTML calls `alleo.fetchProtectedUrl*(null, url, init)`** (public/unauthenticated content fetch). List the common URL prefix for each distinct origin/domain the HTML fetches from this way - **not** every individual URL, just one shared prefix per source (e.g. `"https://api.example.com/"` covers every path under it). Group multiple calls to the same domain into a single prefix entry instead of listing each full URL separately. |
 
-`backendSchema` fields, all **required** for every entry:
+`backendSchemas` is a list of one or more schemas that the same credential may be used with (e.g. the same key attached as a header for the REST endpoint and as a query parameter for a streaming endpoint). Each schema has these fields, all **required**:
 
-| Field         | Type                               | Meaning                                                                                                                                                                                                                                      |
-| ------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `method`      | `"QueryParam"` \| `"Header"`       | Where the parent widget injects the credential into the request: as a query string parameter, or as a request header.                                                                                                                        |
-| `template`    | `string`                           | The exact header/query-param assignment, using `{{secret.token}}` as the placeholder for the real credential. Format is `"<Name>={{secret.token}}"`, e.g. `"Authorization=Bearer {{secret.token}}"` or `"appid={{secret.token}}"`.           |
-| `connection`  | `"Http"` \| `"WebSocket"`          | Use `"Http"` for one-off `fetch`-style calls (the vast majority of cases). `"WebSocket"` is for persistent connections and is not exercised by `fetchProtectedUrl*`.                                                                         |
-| `allowedUrls` | `[string, ...string[]]` (1+ items) | **The exact URL(s) this `keyId` is permitted to call.** This is a hard security boundary enforced by the platform - a call to any URL not in this list is rejected before the credential is ever attached, no matter what the HTML requests. |
+| Field         | Type                               | Meaning                                                                                                                                                                                                                                                                                                                                      |
+| ------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `method`      | `"QueryParam"` \| `"Header"`       | Where the parent widget injects the credential into the request: as a query string parameter, or as a request header.                                                                                                                                                                                                                        |
+| `template`    | `string`                           | The exact header/query-param assignment, using `{{secret.token}}` as the placeholder for the real credential. Format is `"<Name>={{secret.token}}"`, e.g. `"Authorization=Bearer {{secret.token}}"` or `"appid={{secret.token}}"`.                                                                                                           |
+| `connection`  | `"Http"` \| `"WebSocket"`          | Use `"Http"` for one-off `fetch`-style calls (the vast majority of cases). `"WebSocket"` is for persistent connections and is not exercised by `fetchProtectedUrl*`.                                                                                                                                                                         |
+| `allowedUrls` | `[string, ...string[]]` (1+ items) | **The exact URL(s) this `keyId` is permitted to call.** This is a hard security boundary enforced by the platform - a call to any URL not in this list is rejected before the credential is ever attached, no matter what the HTML requests. With several schemas, the union of all their `allowedUrls` forms the boundary for that `keyId`. |
 
-> ⚠️ **`allowedUrls` is mandatory and must be exact/narrow - this is not optional decoration.** List every specific endpoint the generated HTML actually calls (e.g. `"https://api.example.com/v1/forecast"`), not a wildcard or a bare domain you don't fully trust with every path under it. Omitting `allowedUrls`, leaving it empty, or making it overly broad defeats the entire purpose of the protected-backend feature and will be rejected or flagged during review.
+> ⚠️ **`allowedUrls` is mandatory and must be exact/narrow - this is not optional decoration.** List every specific endpoint the generated HTML actually calls (e.g. `"https://api.example.com/v1/forecast"`), not a wildcard or a bare domain you don't fully trust with every path under it. If a `keyId` ends up with no allowed endpoint at all, every request made with it is blocked, so the widget simply will not work. Making it overly broad defeats the entire purpose of the protected-backend feature and will be rejected or flagged during review.
 
-Example - a widget that only needs public, unauthenticated fetches (`keyId: null`) - no `allowedProtectedBackends` entry is needed:
+> ⚠️ **`allowedPublicUrls` is required whenever any `fetchProtectedUrl*` call passes `keyId: null`.** Unlike `allowedUrls`, this is not a security allowlist - it just documents where the widget's public data comes from. List one common URL prefix per distinct domain the HTML fetches publicly (e.g. `"https://api.example.com/"`), not every exact URL called on that domain.
+
+Example - a widget that only needs public, unauthenticated fetches (`keyId: null`):
 
 ```jsonc
 {
     // ...other required keys...
     "enableIframeCommunication": true,
     "enableBackendProxy": true,
+    "allowedPublicUrls": ["https://api.example.com/"],
 }
 ```
 
@@ -183,12 +186,14 @@ Example - a widget that calls one authenticated weather endpoint under the `keyI
     "enableBackendProxy": true,
     "allowedProtectedBackends": {
         "weatherApi": {
-            "backendSchema": {
-                "method": "QueryParam",
-                "template": "appid={{secret.token}}",
-                "connection": "Http",
-                "allowedUrls": ["https://api.openweathermap.org/data/2.5/weather"],
-            },
+            "backendSchemas": [
+                {
+                    "method": "QueryParam",
+                    "template": "appid={{secret.token}}",
+                    "connection": "Http",
+                    "allowedUrls": ["https://api.openweathermap.org/data/2.5/weather"],
+                },
+            ],
         },
     },
 }
@@ -209,12 +214,14 @@ Example - OpenAI Chat Completions with a bearer token under `keyId` `"openaiApi"
     "enableBackendProxy": true,
     "allowedProtectedBackends": {
         "openaiApi": {
-            "backendSchema": {
-                "method": "Header",
-                "template": "Authorization=Bearer {{secret.token}}",
-                "connection": "Http",
-                "allowedUrls": ["https://api.openai.com/v1/chat/completions"],
-            },
+            "backendSchemas": [
+                {
+                    "method": "Header",
+                    "template": "Authorization=Bearer {{secret.token}}",
+                    "connection": "Http",
+                    "allowedUrls": ["https://api.openai.com/v1/chat/completions"],
+                },
+            ],
         },
     },
 }
@@ -235,7 +242,9 @@ const completion = await alleo.fetchProtectedUrlJSON('openaiApi', 'https://api.o
 })
 ```
 
-**The footer never contains the actual API key/token.** After import, the board owner must open the widget's context menu and use the auto-added **"Configure External Connection `<keyId>`"** action to enter the real credential once; from then on every `fetchProtectedUrl*(keyId, …)` call is authenticated with it. If you configure `allowedProtectedBackends` in the footer but the user hasn't entered a credential yet, calls will fail until they do.
+**The footer never contains the actual API key/token.** Right after the import, Alleo asks the board owner to enter the credential for every declared connection that doesn't have one yet. It can also be entered or changed later from the widget's context menu, via the auto-added **"Configure External Connection `<keyId>`"** action. Until a credential is stored, every `fetchProtectedUrl*(keyId, …)` call fails.
+
+> Older footers that use a single `backendSchema` object instead of the `backendSchemas` array are still imported correctly; they are converted to the array form, and exports always use `backendSchemas`.
 
 ### Actions
 
@@ -322,11 +331,11 @@ The footer is not decoration - it must reflect what the HTML code actually does.
 3. **Actions:** for every `alleo.triggerAction('<id>', { <param>: ... })` in the HTML, add a matching entry to `outgoingActions` with the same `id` and one `outputData` slot per `data` key (matching `id` and a sensible `type`) - **including `onloaded`**, which needs its own `{ "id": "onloaded", "label": "Loaded" }` entry with no `outputData`. For every action id handled in `alleo.onIncomingAction`, add a matching `incomingActions` entry, with `inputData` slots for each expected `data` key. **The footer's action ids and parameter ids must be identical to the strings used in the HTML.**
 4. **Synced status:** if the HTML calls `alleo.setSyncedStatus` / `requestSyncedStatus` / `onSyncedStatusUpdate`, set `enableSyncedStatus: true`.
 5. **Add content:** if the HTML calls `alleo.addContent`, set `enableIframeFuncAddContent: true`.
-6. **Board object content:** if the HTML calls `alleo.getBoardObjectContent` / `replaceBoardObjectContent` / `appendBoardObjectContent`, set `enableIframeFuncBoardObjectContent: true`. Leave `boardObjectWhitelist` as `[]` (you cannot know real object ids) and tell the user to add the objects in the order the HTML's 1-based indices expect.
+6. **Board object content:** if the HTML calls `alleo.getBoardObjectContent` / `replaceBoardObjectContent` / `appendBoardObjectContent`, set `enableIframeFuncBoardObjectContent: true`. Do **not** add `boardObjectWhitelist` to the footer (it is not importable) - tell the user to pick the objects in the import dialog, in the order the HTML's 1-based indices expect.
 7. **Microphone:** if the HTML uses `alleo.mic`, set `iframeAllowMicrophone: true` (and `enableIframeCommunication: true`).
 8. **Forms:** if the HTML submits a `<form>`, keep `iframeAllowForms: true`.
 9. **URL parameters:** if the HTML reads `alleo.getParams`, set `enableGetParams: true`. If the HTML reads `alleo.user`, set `enableGetUser: true`.
-10. **Internet fetches:** if the HTML calls `alleo.fetchProtectedUrlJSON` / `fetchProtectedUrlText` / `fetchProtectedUrlBinary` for any reason - public (`keyId: null`) or authenticated - set `enableBackendProxy: true`. For each non-null `keyId` used, also add an `allowedProtectedBackends` entry with `allowedUrls` listing the exact endpoint (s) that `keyId` calls (see [Protected backend connections](#protected-backend-connections)). Never embed the credential itself anywhere in the footer or HTML.
+10. **Internet fetches:** if the HTML calls `alleo.fetchProtectedUrlJSON` / `fetchProtectedUrlText` / `fetchProtectedUrlBinary` for any reason - public (`keyId: null`) or authenticated - set `enableBackendProxy: true`. For each non-null `keyId` used, also add an `allowedProtectedBackends` entry with `allowedUrls` listing the exact endpoint (s) that `keyId` calls (see [Protected backend connections](#protected-backend-connections)). For every `keyId: null` call, also add the domain's common URL prefix to `allowedPublicUrls` (one prefix per distinct domain, not every exact URL). Never embed the credential itself anywhere in the footer or HTML.
 11. **Appearance:** mirror the background/primary/text colors and font you used in `backgroundColor`/`primaryColor`/`textColor`/`font` (each applied as the matching `--alleo-*` CSS variable) so the iframe frame matches the content.
 12. **Color/font pickers:** set `enabledColorPickers` to the background/primary/text/font pickers you decided to expose in Alleo's own settings panel - this is a decision you make while designing the widget (see `AI-INSTRUCTIONS.md`), not something mechanically derived from the HTML.
 13. **Size:** set `DefaultWidth`/`DefaultHeight` to the fixed pixel size you designed for (both positive numbers, default `1280`×`720`), or omit both to keep the user's current size.
@@ -343,7 +352,7 @@ If a capability is **not** used by the HTML, **still include its key** in the fo
 - [ ] The footer is a single `<!-- ... -->` comment containing the literal `WIDGETSETTINGS:` token.
 - [ ] The JSON parses with `JSON.parse` - double-quoted keys/strings, no trailing commas, no comments, no `undefined`.
 - [ ] No `-->` appears inside any JSON string value.
-- [ ] Only allowed keys are present; no `htmlContent`, `sourceType`, `url`, `fileId`, or `overwriteTextColor`.
+- [ ] Only allowed keys are present; no `htmlContent`, `sourceType`, `url`, `fileId`, `overwriteTextColor`, `boardObjectWhitelist`, or `newContentContainer`.
 - [ ] If present, `DefaultWidth` and `DefaultHeight` are supplied together as positive numbers matching the design size.
 - [ ] **All required keys are present** (the full _Required keys_ table), each with an explicit value; unused features set to `false` / `[]` / empty rather than omitted.
 - [ ] `backgroundColor`, `textColor`, `primaryColor`, and `font` mirror the theme actually used, and `enabledColorPickers` matches the color/font picker decision made while designing the widget.
@@ -358,12 +367,12 @@ If a capability is **not** used by the HTML, **still include its key** in the fo
 
 ## Complete example
 
-A button widget that fires `submit` (with a `label` string) and accepts an incoming `reset`, synchronising its state. Only the footer is shown here; the HTML above it follows `AI-INSTRUCTIONS.md`.
+A button widget that fires `submit` (with a `label` string) and accepts an incoming `reset`, synchronizing its state. Only the footer is shown here; the HTML above it follows `AI-INSTRUCTIONS.md`.
 
 ```html
 <!doctype html>
 <html lang="en">
-<!-- ... full self-contained widget HTML per AI-INSTRUCTIONS.md ... -->
+    <!-- ... full self-contained widget HTML per AI-INSTRUCTIONS.md ... -->
 </html>
 
 <!--

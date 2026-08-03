@@ -657,20 +657,38 @@ unsubscribe()
 ### `fetchProtectedUrlJSON` / `fetchProtectedUrlText` / `fetchProtectedUrlBinary`
 
 ```ts
-fetchProtectedUrlJSON(keyId: string | null, input: RequestInfo | URL, init?: RequestInit): Promise<unknown>
-fetchProtectedUrlText(keyId: string | null, input: RequestInfo | URL, init?: RequestInit): Promise<string>
-fetchProtectedUrlBinary(keyId: string | null, input: RequestInfo | URL, init?: RequestInit): Promise<ArrayBuffer>
+fetchProtectedUrlJSON(keyId
+:
+string | null, input
+:
+RequestInfo | URL, init ? : RequestInit
+):
+Promise<unknown>
+fetchProtectedUrlText(keyId
+:
+string | null, input
+:
+RequestInfo | URL, init ? : RequestInit
+):
+Promise<string>
+fetchProtectedUrlBinary(keyId
+:
+string | null, input
+:
+RequestInfo | URL, init ? : RequestInit
+):
+Promise<ArrayBuffer>
 ```
 
-**Always prefer these over a plain `fetch()` whenever the widget needs to download anything from the internet.** The iframe is served from a sandboxed origin, so a plain `fetch()` to a third-party URL is usually blocked by CORS. `keyId` controls the mode:
+**Always prefer these over a plain `fetch()` whenever the widget needs to download anything from the internet.** A plain `fetch()` is blocked. `keyId` controls the mode:
 
-- **`keyId: null`** - a **public, unauthenticated** fetch, routed through the Alleo CORS-bypass proxy. Use this for any request that doesn't carry a secret, token, password, or API key.
+- **`keyId: null`** - a **public, unauthenticated** fetch. Use this for any request that doesn't carry a secret, token, password, or API key.
 - **`keyId: '<string>'`** - **the only supported way for embedded content to call a third-party API that requires authentication** (an API key, bearer token, or any other credential). The iframe never sees, holds, or sends the credential itself - the parent widget attaches it server-side and enforces which URLs may be called.
 
 Never hard-code an API key/secret in the HTML/JS you generate, and never attempt to pass a secret through the `keyId: null` (public) path or a plain `fetch()`; those only work for public, unauthenticated resources.
 
 ```js
-// Public, unauthenticated fetch through the CORS-bypass proxy
+// Public, unauthenticated fetch
 const data = await alleo.fetchProtectedUrlJSON(null, 'https://api.example.com/data?id=42')
 ```
 
@@ -679,7 +697,7 @@ const data = await alleo.fetchProtectedUrlJSON(null, 'https://api.example.com/da
 const data = await alleo.fetchProtectedUrlJSON('weatherApi', 'https://api.example.com/v1/forecast?city=Berlin')
 ```
 
-- `keyId` is `null` for a public/unauthenticated fetch through the CORS-bypass proxy, or a string identifying **which** configured backend connection to use for an authenticated call. A non-null `keyId` must match one of the keys of the `allowedProtectedBackends` object in the widget's [import footer](./IMPORT-FOOTER.md#protected-backend-connections) (or configured directly in the widget's settings).
+- `keyId` is `null` for a public/unauthenticated fetch, or a string identifying **which** configured backend connection to use for an authenticated call. A non-null `keyId` must match one of the keys of the `allowedProtectedBackends` object in the widget's [import footer](./IMPORT-FOOTER.md#protected-backend-connections) (or configured directly in the widget's settings).
 - `input` must be an `https://` URL. For a non-null `keyId` it is checked against that connection's configured `allowedUrls` - a request to any other URL is rejected. There is **no way around this allow-list** from inside the iframe.
 - `init` is forwarded like a normal `fetch()` (`method`, `headers`, `body`, etc.) - omit any `Authorization`/API-key header yourself for authenticated calls; the parent widget injects the real credential according to the connection's configured `method`/`template`.
 - Requires **Enable Alleo board features for enclosed content** + **Allow use of protected backends** in the widget's settings for both the `keyId: null` and authenticated cases. An authenticated call additionally needs at least one entry in **Allowed protected backends** matching `keyId`, and a board owner must enter the actual credential once via the widget's "Configure External Connection" context-menu action - the footer/settings only declare **which** endpoints are allowed, never the secret value itself.

@@ -502,7 +502,6 @@ Write operations are fire-and-forget; failures are reported through the log via
     "enableSyncedStatus": false,
     "enableIframeFuncBoardObjectContent": true,
     "enableBackendProxy": false,
-    "boardObjectWhitelist": [],
     "incomingActions": [
         {
             "id": "read-object",
@@ -543,7 +542,7 @@ Write operations are fire-and-forget; failures are reported through the log via
     "enabledColorPickers": { "background": true, "primary": true, "text": true, "font": false },
     "iframeAllowMicrophone": false,
     "requiredAPIfunctions": ["initialize", "getBoardObjectContent", "replaceBoardObjectContent", "appendBoardObjectContent", "onError", "triggerAction", "onIncomingAction"],
-    "version": "1.20260728",
+    "version": "2.20260803",
     "DefaultWidth": 680,
     "DefaultHeight": 560
 }

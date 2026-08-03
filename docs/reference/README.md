@@ -6,8 +6,7 @@
 
 # E-widget - _Alleo widget_
 
-(beta) Create a custom widget using common HTML code. Display your content with complete flexibility, create
-interactive, dynamic experiences tailored exactly to your needs.
+(beta) Create a custom widget using common HTML code. Display your content with complete flexibility, create interactive, dynamic experiences tailored exactly to your needs.
 
 ## Documentation
 
@@ -21,14 +20,14 @@ interactive, dynamic experiences tailored exactly to your needs.
 
 ## Information
 
-| []()         | []()                                                                                    |
-|--------------|-----------------------------------------------------------------------------------------|
-| Icon         | ![Icon](https://widgets.withalleo.com/com.withalleo/embed-browser/assets/icon-beta.png) |
-| Version      | `1.0.79`                                                                                |
-| Widget id    | `embed-browser`                                                                         |
-| Author       | [Alleo](https://www.withalleo.com)                                                      |
-| Publisher id | `com.withalleo`                                                                         |
-| Default size | 1280 x 720                                                                              |
+| []()         | []()                               |
+| ------------ | ---------------------------------- |
+| Icon         | ![Icon](.././assets/icon-beta.png) |
+| Version      | `1.0.82`                           |
+| Widget id    | `embed-browser`                    |
+| Author       | [Alleo](https://www.withalleo.com) |
+| Publisher id | `com.withalleo`                    |
+| Default size | 1280 x 720                         |
 
 ## Settings
 
@@ -39,6 +38,10 @@ Default not set in configuration file
 ### `IframeCommandRateLimitWindowMs`
 
 Default in configuration: `10000`
+
+### `CorsProxyKeyId`
+
+Default in configuration: `CorsProxy`
 
 ### `DefaultSourceType`
 
@@ -254,17 +257,22 @@ Default in configuration:
 
 ```json
 {
-  "triggerAction": 50,
-  "addContent": 20,
-  "requestSyncedStatus": 20,
-  "setSyncedStatus": 50,
-  "getBoardObjectContent": 50,
-  "replaceBoardObjectContent": 20,
-  "appendBoardObjectContent": 20,
-  "micStart": 20,
-  "micStop": 20
+    "triggerAction": 50,
+    "addContent": 20,
+    "requestSyncedStatus": 20,
+    "setSyncedStatus": 50,
+    "getBoardObjectContent": 50,
+    "replaceBoardObjectContent": 20,
+    "appendBoardObjectContent": 20,
+    "micStart": 20,
+    "micStop": 20,
+    "requestProtectedUrl": 20
 }
 ```
+
+### `CorsProxyUrl`
+
+Default in configuration: `https://dev-widgets-alpha.hap.tc/widget-backend/cors-bypass/`
 
 ### `DefaultActionTriggers`
 
@@ -280,21 +288,21 @@ Default in configuration:
 
 ```json
 {
-  "CorsProxy": {
-    "DisplayName": "Alleo CORS Proxy",
-    "PrivacyPolicyUrl": "https://www.withalleo.com/privacy-policy",
-    "EnableUI": false,
-    "DefaultScope": "deployment",
-    "UseOrganizationKeyOverDeploymentKey": true,
-    "EnableChangingScope": true,
-    "DeploymentSharedSecretId": "CorsProxy",
-    "OrganizationSharedSecretId": "CorsProxy",
-    "AllowDeploymentSharedSecret": true,
-    "AllowOrganizationSharedSecret": true,
-    "AllowCustomDeploymentSharedSecret": false,
-    "AllowCustomOrganizationSharedSecret": false,
-    "AllowCustomApiConnection": false
-  }
+    "CorsProxy": {
+        "DisplayName": "Alleo CORS Proxy",
+        "PrivacyPolicyUrl": "https://www.withalleo.com/privacy-policy",
+        "EnableUI": false,
+        "DefaultScope": "deployment",
+        "UseOrganizationKeyOverDeploymentKey": true,
+        "EnableChangingScope": true,
+        "DeploymentSharedSecretId": "CorsProxy",
+        "OrganizationSharedSecretId": "CorsProxy",
+        "AllowDeploymentSharedSecret": true,
+        "AllowOrganizationSharedSecret": true,
+        "AllowCustomDeploymentSharedSecret": false,
+        "AllowCustomOrganizationSharedSecret": false,
+        "AllowCustomApiConnection": false
+    }
 }
 ```
 
@@ -312,6 +320,7 @@ Default in configuration:
 - `default-colors`
 - `widget-assets`
 - `default-network`
+- `backend-proxy-CorsProxy`
 
 ## Changelog
 
@@ -488,7 +497,7 @@ Default in configuration:
 
 ### 1.0.67
 
-- embed browser: make alleo.initialize () async and automatically handle the onloaded trigger.
+- embed browser: make alleo.initialize() async and automatically handle the onloaded trigger.
 - embed browser: clarify API library code structure and description
 
 ### 1.0.68
@@ -554,3 +563,26 @@ Default in configuration:
 ### 1.0.79
 
 - embed browser: add information about the current user
+
+### 1.0.80
+
+- embed browser: update AI instructions for consistency
+- embed browser: update AI instructions around the import dialog.
+- embed browser: properly wait to open key dialogs one after an other when importing.
+- embed browser: add rate limiting (20 req/10sec) for all fetch requests by the iframe content
+- embed browser: escape html characters in the widget config before passing them to the import permission dialog.
+- embed browser: properly check if backend proxy is available
+- embed browser: check url whitelisted status locally before sending the request to the backend proxy
+
+### 1.0.81
+
+- embed browser: adjust CORS proxy security. Remove cors proxy from the iframe library; add relevant import screen warnings; adjust AI instructions.
+
+### 1.0.82
+
+- add an "Experimental" category for widgets and move our widgets marked "beta" there.
+- embed browser: make url whitelist check more strict
+- embed browser: validate url when exporting url based e-widget
+- embed browser: update documentation and AI instructions to remove references to the CORS proxy
+- embed browser: add support for multi-step authentication (eg. oauth and other methods requesting tokens)
+- embed browser: adjust import dialog verbiage and user documentation around fetching content.

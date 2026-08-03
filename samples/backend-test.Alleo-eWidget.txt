@@ -23,7 +23,7 @@ Board editors can adjust the background, primary, and text colors. Endpoint URLs
 
 ## Notes
 
-All endpoints are public and require no API key, but the widget fetches them through Alleo's protected backend proxy (`alleo.fetchProtectedUrlJSON` with `keyId: null`) so it works from the sandboxed iframe. The board must have **Allow use of protected backends** enabled and internet access; it does not work in an offline Alleo deployment. A failed request shows an inline error and does not affect the other test buttons. Widget state is independent for each instance.
+All endpoints are public and require no API key. Each distinct domain's common URL prefix is declared in the footer's `allowedPublicUrls`. The board must have **Allow use of protected backends** enabled and internet access; it does not work in an offline Alleo deployment. A failed request shows an inline error and does not affect the other test buttons. Widget state is independent for each instance.
 -->
 <!doctype html>
 <html lang="en">
@@ -490,6 +490,11 @@ All endpoints are public and require no API key, but the widget fetches them thr
     "enableSyncedStatus": false,
     "enableIframeFuncBoardObjectContent": false,
     "enableBackendProxy": true,
+    "allowedPublicUrls": [
+        "https://jsonplaceholder.typicode.com/",
+        "https://dummyjson.com/",
+        "https://api.open-meteo.com/"
+    ],
     "incomingActions": [
         {
             "id": "test-todo-backend",
@@ -553,7 +558,7 @@ All endpoints are public and require no API key, but the widget fetches them thr
         "triggerAction",
         "onIncomingAction"
     ],
-    "version": "3.20260728",
+    "version": "4.20260803",
     "DefaultWidth": 620,
     "DefaultHeight": 480
 }

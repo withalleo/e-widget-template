@@ -509,14 +509,16 @@ Board editors can adjust the background, primary, and text colors from the widge
     "enableBackendProxy": true,
     "allowedProtectedBackends": {
         "openaiApi": {
-            "backendSchema": {
-                "method": "Header",
-                "template": "Authorization=Bearer {{secret.token}}",
-                "connection": "Http",
-                "allowedUrls": [
-                    "https://api.openai.com/v1/responses"
-                ]
-            }
+            "backendSchemas": [
+                {
+                    "method": "Header",
+                    "template": "Authorization=Bearer {{secret.token}}",
+                    "connection": "Http",
+                    "allowedUrls": [
+                        "https://api.openai.com/v1/responses"
+                    ]
+                }
+            ]
         }
     },
     "incomingActions": [
@@ -581,7 +583,7 @@ Board editors can adjust the background, primary, and text colors from the widge
         "onIncomingAction",
         "fetchProtectedUrlJSON"
     ],
-    "version": "2.20260728",
+    "version": "3.20260803",
     "DefaultWidth": 640,
     "DefaultHeight": 360
 }

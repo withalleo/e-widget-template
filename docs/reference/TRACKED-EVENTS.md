@@ -1,9 +1,3 @@
-<!--
-  AUDIENCE: Reference only — analytics events emitted by the E-widget.
-  This is background for the human/admin, NOT authoring instructions. An agent
-  does not need to read this to build a widget. For authoring rules see
-  ../../AGENTS.md.
--->
 # Embed Browser - Tracked Analytics Events
 
 This document lists every analytics event emitted by the **embed-browser** widget.

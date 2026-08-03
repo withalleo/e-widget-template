@@ -55,18 +55,18 @@ Because the iframe is sandboxed, embedded scripts cannot call `navigator.mediaDe
 
 ### Protected backend proxy (internet fetches, authenticated or public)
 
-Use this feature when embedded HTML needs to fetch anything from the internet - a public/unauthenticated URL via a CORS-bypass proxy, or a third-party API that requires credentials (API keys, bearer tokens, etc.).
+Use this feature when embedded HTML needs to fetch anything from the internet - a public/unauthenticated URL, or a third-party API that requires credentials (API keys, bearer tokens, etc.).
 
-| Key                               | Type                                     | Default | Meaning                                                                                                                                     |
-| --------------------------------- | ---------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DefaultEnableBackendProxy`       | `boolean`                                | `false` | Enables `alleo.fetchProtectedUrlJSON/Text/Binary` - required for **both** the public `keyId: null` CORS-proxy path and authenticated calls. |
-| `DefaultAllowedProtectedBackends` | `Record<string, { backendSchema: ... }>` | `{}`    | Declares per-`keyId` request schema and strict `allowedUrls` enforcement for authenticated requests (non-null `keyId` only).                |
+| Key                               | Type                                        | Default | Meaning                                                                                                                      |
+| --------------------------------- | ------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `DefaultEnableBackendProxy`       | `boolean`                                   | `false` | Enables `alleo.fetchProtectedUrlJSON/Text/Binary` - required for **both** the public `keyId: null` and authenticated calls.  |
+| `DefaultAllowedProtectedBackends` | `Record<string, { backendSchemas: [...] }>` | `{}`    | Declares per-`keyId` request schema and strict `allowedUrls` enforcement for authenticated requests (non-null `keyId` only). |
 
 Security properties:
 
 - Credentials are configured by owners in the backend-connection UI and are **not** stored in widget HTML/footer.
-- `allowedUrls` is enforced server-side per non-null `keyId`; requests outside that list are rejected.
-- A `keyId: null` call never carries a credential - it is purely a CORS-bypass proxy for public resources and has no `allowedUrls` restriction.
+- `allowedUrls` is enforced per non-null `keyId`, both by the widget before the request leaves the board and server-side; requests outside that list are rejected. A `keyId` whose schemas declare no allowed URL cannot be used at all.
+- A `keyId: null` call never carries a credential - it is purely to access public resources and has no `allowedUrls` restriction.
 
 ---
 

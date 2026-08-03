@@ -38,15 +38,15 @@ It's designed for common "show something live on the board" use cases, while sti
 
 1. [Use the pre-configured chat](https://chatgpt.com/g/g-6a26cd8b99308191b372cf914dd2f157-alleo-e-widget-creator)
 
-    This path is intended for beginners.
+   This path is intended for beginners.
 
 2. [Use the template repository](https://github.com/withalleo/e-widget-template)
 
-    This path is intended for professional developers.
+   This path is intended for professional developers.
 
 3. [Download AI instructions](https://widgets.withalleo.com/com.withalleo/embed-browser/documentation/AI-INSTRUCTIONS.md)
 
-    This works with most AI agents.
+   This works with most AI agents.
 
 After generating an e-widget with AI, you can use the import button to set it up.
 
@@ -123,10 +123,10 @@ The microphone option may be hidden when your organization enforces strict secur
 
 ### External connections
 
-| Setting                                                                                                    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Allow use of protected backends**                                                                        | Lets the embedded content fetch anything from the internet via `alleo.fetchProtectedUrlJSON`/`fetchProtectedUrlText`/`fetchProtectedUrlBinary` - both public/unauthenticated fetches (`keyId: null`, routed through the CORS-bypass proxy) and authenticated calls to third-party APIs that require an **API key, token, or other credential**. This is the **only** supported way to reach the internet from inside the sandboxed iframe - the credential itself is never exposed to the iframe or embedded in the widget's HTML. |
-| **Configure External Connection `<keyId>`** (context-menu action, appears once a connection is configured) | Opens a dialog to enter the real API key/credential for a given connection. Each connection also declares which exact endpoint URL(s) it may call - a call to any other URL is rejected.                                                                                                                                                                                                                                                                                                                                           |
+| Setting                                                                                                    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Allow use of protected backends**                                                                        | Lets the embedded content fetch anything from the internet via `alleo.fetchProtectedUrlJSON`/`fetchProtectedUrlText`/`fetchProtectedUrlBinary` - both public/unauthenticated fetches (`keyId: null`) and authenticated calls to third-party APIs that require an **API key, token, or other credential**. This is the **only** supported way to reach the internet from inside the sandboxed iframe - the credential itself is never exposed to the iframe or embedded in the widget's HTML. |
+| **Configure External Connection `<keyId>`** (context-menu action, appears once a connection is configured) | Opens a dialog to enter the real API key/credential for a given connection. Each connection also declares which exact endpoint URL(s) it may call - a call to any other URL is rejected.                                                                                                                                                                                                                                                                                                     |
 
 ---
 
@@ -233,7 +233,7 @@ The values are captured once and remain fixed for the widget's lifetime, even if
 
 ### Reading the current user
 
-Enable **Allow access to the current user profile** (under **Security**) to expose the profile of the logged-in board user to your embedded content - useful for personalizing the widget or pre-filling a name/email. The profile is read-only and captured once during `alleo.initialize()`.
+Enable **Allow access to the current user profile** (under **Security**) to expose the profile of the logged-in board user to your embedded content - useful for personalising the widget or pre-filling a name/email. The profile is read-only and captured once during `alleo.initialize()`.
 
 ```js
 alleo.initialize()
@@ -294,7 +294,7 @@ Use **Container for new content** to direct new objects into a specific group or
 
 ### Fetching content from the internet
 
-Custom HTML content **cannot** reliably fetch a third-party URL with a plain `fetch()` - it's usually blocked by CORS, and a request that requires an API key, bearer token, or other credential would expose that credential in the page source. Instead, enable **Allow use of protected backends** and call one of:
+Custom HTML content **cannot** fetch a third-party URL with a plain `fetch()` - Instead, enable **Allow use of protected backends** and call one of:
 
 ```js
 const data = await alleo.fetchProtectedUrlJSON(keyId, url, init)
@@ -302,12 +302,18 @@ const text = await alleo.fetchProtectedUrlText(keyId, url, init)
 const bytes = await alleo.fetchProtectedUrlBinary(keyId, url, init)
 ```
 
-- Pass `keyId: null` for a **public, unauthenticated** URL - the request is routed through Alleo's CORS-bypass proxy. Prefer this over a plain `fetch()` for any public resource.
+- Pass `keyId: null` for a **public, unauthenticated** URL. Always use this, instead of `fetch()` for any public resource.
 - Pass a `keyId` string to call an **authenticated** third-party API. The parent widget attaches the real credential to the request on your behalf; the iframe never sees it.
 - Each authenticated connection also has an **allow-list of exact URLs** it may call - a request to any other URL is rejected, even if the iframe content asks for it.
 - After importing a widget that declares a connection, open the widget's **context menu → "Configure External Connection `<keyId>`"** to enter the real API key/credential once.
 
 This is the **only** supported way to reach the internet from inside the embed - never use a plain `fetch()`, and never a request that carries a secret.
+
+#### Connection method
+
+Requests with keys always go through a proxy, which manages the keys and adds them to the request.
+
+Requests without a key use the browser's native `fetch()`. The target endpoint must therefore allow browser requests through its CORS configuration.
 
 ### Reading & writing board object content
 
@@ -330,7 +336,7 @@ alleo.appendBoardObjectContent(1, '\n- Another item')
 
 ```js
 const unsubscribe = alleo.onError(({ index, error, requestId }) => {
-    console.error(`Error on object #${index}:`, error)
+   console.error(`Error on object #${index}:`, error)
 })
 ```
 
@@ -380,23 +386,23 @@ Demonstrates outgoing triggers and synced status. Enable **Board features**, **s
 <button id="action-btn" style="border:none; padding: 16px 24px; font-size: 1rem; cursor: pointer;">START</button>
 
 <script>
-    const button = document.getElementById('action-btn')
+   const button = document.getElementById('action-btn')
 
-    const randomColor = () =>
-        '#' +
-        Math.floor(Math.random() * 0xffffff)
-            .toString(16)
-            .padStart(6, '0')
+   const randomColor = () =>
+           '#' +
+           Math.floor(Math.random() * 0xffffff)
+                   .toString(16)
+                   .padStart(6, '0')
 
-    button.addEventListener('click', () => {
-        alleo.triggerAction('demo', { 'demo-param': 'Hello World!' })
-        alleo.setSyncedStatus({ color: randomColor() })
-    })
+   button.addEventListener('click', () => {
+      alleo.triggerAction('demo', { 'demo-param': 'Hello World!' })
+      alleo.setSyncedStatus({ color: randomColor() })
+   })
 
-    alleo.onSyncedStatusUpdate((status) => {
-        if (status.color) button.style.backgroundColor = status.color
-    })
+   alleo.onSyncedStatusUpdate((status) => {
+      if (status.color) button.style.backgroundColor = status.color
+   })
 
-    alleo.initialize()
+   alleo.initialize()
 </script>
 ```
